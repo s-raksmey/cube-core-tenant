@@ -1,0 +1,46 @@
+query TenantUsers($search: String, $page: Int, $pageSize: Int) {
+  tenantUsers(search: $search, page: $page, pageSize: $pageSize) {
+    items {
+      id
+      email
+      username
+      firstName
+      lastName
+      fullName
+      role
+      status
+      createdAt
+      lastLoginAt
+      totpEnabled
+    }
+    total
+    page
+    pageSize
+  }
+}
+
+mutation CreateTenantUser(
+  $email: String!
+  $firstName: String!
+  $lastName: String!
+  $role: SubTenantRole = ADMIN
+) {
+  createAdminUser(
+    email: $email
+    firstName: $firstName
+    lastName: $lastName
+    role: $role
+  ) {
+    user {
+      id
+      email
+      firstName
+      lastName
+      fullName
+      role
+      status
+    }
+    activationUrl
+    expiresAt
+  }
+}

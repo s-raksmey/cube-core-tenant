@@ -6,8 +6,8 @@ import { Copy, Plus, Search } from "lucide-react";
 import {
   CREATE_TENANT_USER,
   TENANT_USERS_QUERY,
-} from "@/lib/graphql/operations";
-import type { AuthUser, SubTenantRole, UserStatus } from "@/lib/types";
+} from "@/lib/apollo/operations";
+import type { AuthUser, SubTenantRole } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,20 +37,6 @@ import {
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/dashboard/empty-state";
 
-type TenantUserRow = {
-  id: string;
-  email: string;
-  username?: string | null;
-  firstName?: string | null;
-  lastName?: string | null;
-  fullName: string;
-  role: string;
-  status: UserStatus;
-  createdAt?: string | null;
-  lastLoginAt?: string | null;
-  totpEnabled?: boolean | null;
-};
-
 function formatDate(value?: string | null) {
   if (!value) return "—";
   return new Date(value).toLocaleString();
@@ -63,14 +49,7 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  const { data, loading, error, refetch } = useQuery<{
-    tenantUsers: {
-      items: TenantUserRow[];
-      total: number;
-      page: number;
-      pageSize: number;
-    };
-  }>(TENANT_USERS_QUERY, {
+  const { data, loading, error, refetch } = useQuery(TENANT_USERS_QUERY, {
     variables: { search: search || null, page, pageSize },
     fetchPolicy: "cache-and-network",
   });
@@ -107,15 +86,7 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
       const result = await createUser({
         variables: { firstName, lastName, email, role },
       });
-      const payload = (
-        result.data as {
-          createAdminUser?: {
-            activationUrl: string;
-            expiresAt: string;
-            user: { email: string };
-          };
-        } | null
-      )?.createAdminUser;
+      const payload = result.data?.createAdminUser;
       setCreateOpen(false);
       if (payload) {
         setLinkResult({
@@ -261,7 +232,7 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
                           ? "default"
                           : user.status === "PENDING"
                             ? "secondary"
-                            : "outline"
+                            : "destructive"
                       }
                     >
                       {user.status}

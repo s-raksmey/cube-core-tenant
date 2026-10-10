@@ -1,313 +1,153 @@
+import "server-only";
+
 import {
-  TENANT_AUDIENCE,
-  type ConsoleAudience,
-} from "@/lib/auth/console";
+  CompleteActivationDocument,
+  CompleteActivationTotpDocument,
+  CompletePasswordResetDocument,
+  LoginDocument,
+  LogoutDocument,
+  RefreshSessionDocument,
+  ValidateActivationTokenDocument,
+  ValidatePasswordResetTokenDocument,
+  VerifyLoginTotpDocument,
+  VerifyRecoveryCodeDocument,
+  VerifyTotpEnrollmentDocument,
+} from "@/lib/apollo/generated/graphql";
+import type {
+  CompleteActivationMutationVariables,
+  CompleteActivationTotpMutationVariables,
+  CompletePasswordResetMutationVariables,
+  ValidateActivationTokenQueryVariables,
+  ValidatePasswordResetTokenQueryVariables,
+  VerifyLoginTotpMutationVariables,
+  VerifyRecoveryCodeMutationVariables,
+  VerifyTotpEnrollmentMutationVariables,
+} from "@/lib/apollo/generated/graphql";
+import { TENANT_AUDIENCE, type ConsoleAudience } from "@/lib/auth/console";
 import { serverGraphql } from "@/lib/auth/graphql";
-import type { AuthUser } from "@/lib/types";
-
-const AUTH_USER_FIELDS = `
-  id
-  email
-  username
-  fullName
-  firstName
-  lastName
-  type
-  role
-  status
-  tenantId
-  tenant {
-    id
-    name
-    slug
-    type
-    status
-  }
-`;
-
-type ChallengeResult = {
-  login: {
-    challengeToken: string;
-    nextStep: "TOTP_ENROLL" | "TOTP_VERIFY";
-    qrCodeDataUrl?: string | null;
-    manualEntryKey?: string | null;
-  };
-};
-
-type AuthPayloadResult = {
-  accessToken: string;
-  refreshToken: string;
-  user: AuthUser;
-};
 
 export async function loginWithPassword(input: {
   email: string;
   password: string;
   audience?: ConsoleAudience;
 }) {
-  const result = await serverGraphql<ChallengeResult>(
-    `mutation Login($email: String!, $password: String!, $audience: LoginAudience!) {
-      login(email: $email, password: $password, audience: $audience) {
-        ... on AuthChallenge {
-          challengeToken
-          nextStep
-          qrCodeDataUrl
-          manualEntryKey
-        }
-      }
-    }`,
+  const result = await serverGraphql(
+    LoginDocument,
     {
       email: input.email,
       password: input.password,
       audience: input.audience ?? TENANT_AUDIENCE,
     },
+    "login",
   );
-
-  if (!result.ok) {
-    throw new Error(result.error);
+  if (!result.ok) throw new Error(result.error);
+  if (!("challengeToken" in result.payload)) {
+    throw new Error("Unexpected login response");
   }
 
   return {
     status: "CHALLENGE" as const,
-    nextStep: result.data.login.nextStep,
-    challengeToken: result.data.login.challengeToken,
-    qrCodeDataUrl: result.data.login.qrCodeDataUrl ?? undefined,
-    manualEntryKey: result.data.login.manualEntryKey ?? undefined,
+    nextStep: result.payload.nextStep,
+    challengeToken: result.payload.challengeToken,
+    qrCodeDataUrl: result.payload.qrCodeDataUrl ?? undefined,
+    manualEntryKey: result.payload.manualEntryKey ?? undefined,
   };
 }
 
-export async function verifyLoginTotp(input: {
-  challengeToken: string;
-  code: string;
-}) {
-  const result = await serverGraphql<{ verifyLoginTotp: AuthPayloadResult }>(
-    `mutation VerifyLoginTotp($challengeToken: String!, $code: String!) {
-      verifyLoginTotp(challengeToken: $challengeToken, code: $code) {
-        accessToken
-        refreshToken
-        user { ${AUTH_USER_FIELDS} }
-      }
-    }`,
-    input,
+export async function verifyLoginTotp(variables: VerifyLoginTotpMutationVariables) {
+  const result = await serverGraphql(
+    VerifyLoginTotpDocument,
+    variables,
+    "verifyLoginTotp",
   );
   if (!result.ok) throw new Error(result.error);
-  return result.data.verifyLoginTotp;
+  return result.payload;
 }
 
-export async function verifyTotpEnrollment(input: {
-  challengeToken: string;
-  code: string;
-}) {
-  const result = await serverGraphql<{
-    verifyTotpEnrollment: AuthPayloadResult;
-  }>(
-    `mutation VerifyTotpEnrollment($challengeToken: String!, $code: String!) {
-      verifyTotpEnrollment(challengeToken: $challengeToken, code: $code) {
-        accessToken
-        refreshToken
-        user { ${AUTH_USER_FIELDS} }
-      }
-    }`,
-    input,
+export async function verifyTotpEnrollment(
+  variables: VerifyTotpEnrollmentMutationVariables,
+) {
+  const result = await serverGraphql(
+    VerifyTotpEnrollmentDocument,
+    variables,
+    "verifyTotpEnrollment",
   );
   if (!result.ok) throw new Error(result.error);
-  return result.data.verifyTotpEnrollment;
+  return result.payload;
 }
 
-export async function verifyRecoveryCode(input: {
-  challengeToken: string;
-  code: string;
-}) {
-  const result = await serverGraphql<{ verifyRecoveryCode: AuthPayloadResult }>(
-    `mutation VerifyRecoveryCode($challengeToken: String!, $code: String!) {
-      verifyRecoveryCode(challengeToken: $challengeToken, code: $code) {
-        accessToken
-        refreshToken
-        user { ${AUTH_USER_FIELDS} }
-      }
-    }`,
-    input,
+export async function verifyRecoveryCode(variables: VerifyRecoveryCodeMutationVariables) {
+  const result = await serverGraphql(
+    VerifyRecoveryCodeDocument,
+    variables,
+    "verifyRecoveryCode",
   );
   if (!result.ok) throw new Error(result.error);
-  return result.data.verifyRecoveryCode;
+  return result.payload;
 }
 
 export async function refreshSession(input: {
   refreshToken: string;
   audience?: ConsoleAudience;
 }) {
-  const result = await serverGraphql<{
-    refreshSession: { accessToken: string };
-  }>(
-    `mutation RefreshSession($refreshToken: String!, $audience: LoginAudience!) {
-      refreshSession(refreshToken: $refreshToken, audience: $audience) {
-        accessToken
-      }
-    }`,
+  const result = await serverGraphql(
+    RefreshSessionDocument,
     {
       refreshToken: input.refreshToken,
       audience: input.audience ?? TENANT_AUDIENCE,
     },
+    "refreshSession",
   );
   if (!result.ok) throw new Error(result.error);
-  return result.data.refreshSession;
+  return result.payload;
 }
 
 export async function logoutSession(accessToken: string) {
-  await serverGraphql(
-    `mutation Logout { logout }`,
-    {},
-    { accessToken },
+  return serverGraphql(LogoutDocument, {}, "logout", { accessToken });
+}
+
+export function validateActivationToken(token: string) {
+  const variables: ValidateActivationTokenQueryVariables = { token };
+  return serverGraphql(
+    ValidateActivationTokenDocument,
+    variables,
+    "validateActivationToken",
   );
 }
 
-export async function validateActivationToken(token: string) {
-  const result = await serverGraphql<{
-    validateActivationToken: Record<string, unknown>;
-  }>(
-    `query ValidateActivationToken($token: String!) {
-      validateActivationToken(token: $token) {
-        valid
-        expiresAt
-        email
-        firstName
-        lastName
-        needsActivation
-      }
-    }`,
-    { token },
+export function completeActivation(variables: CompleteActivationMutationVariables) {
+  return serverGraphql(
+    CompleteActivationDocument,
+    variables,
+    "completeActivation",
   );
-  if (!result.ok) {
-    return { ok: false as const, status: result.status, payload: { error: result.error } };
-  }
-  return {
-    ok: true as const,
-    status: 200,
-    payload: result.data.validateActivationToken,
-  };
 }
 
-export async function completeActivation(body: Record<string, unknown>) {
-  const result = await serverGraphql<{
-    completeActivation: Record<string, unknown>;
-  }>(
-    `mutation CompleteActivation(
-      $token: String!
-      $username: String!
-      $password: String!
-      $confirmPassword: String!
-    ) {
-      completeActivation(
-        token: $token
-        username: $username
-        password: $password
-        confirmPassword: $confirmPassword
-      ) {
-        nextStep
-        challengeToken
-        qrCodeDataUrl
-        manualEntryKey
-        email
-        username
-        activationToken
-      }
-    }`,
-    body,
+export function completeActivationTotp(
+  variables: CompleteActivationTotpMutationVariables,
+) {
+  return serverGraphql(
+    CompleteActivationTotpDocument,
+    variables,
+    "completeActivationTotp",
   );
-  if (!result.ok) {
-    return { ok: false as const, status: result.status, payload: { error: result.error } };
-  }
-  return {
-    ok: true as const,
-    status: 200,
-    payload: result.data.completeActivation,
-  };
 }
 
-export async function completeActivationTotp(body: Record<string, unknown>) {
-  const result = await serverGraphql<{
-    completeActivationTotp: Record<string, unknown>;
-  }>(
-    `mutation CompleteActivationTotp(
-      $challengeToken: String!
-      $code: String!
-      $activationToken: String!
-    ) {
-      completeActivationTotp(
-        challengeToken: $challengeToken
-        code: $code
-        activationToken: $activationToken
-      ) {
-        success
-        recoveryCodes
-        user { id email }
-      }
-    }`,
-    body,
+export function validatePasswordResetToken(token: string) {
+  const variables: ValidatePasswordResetTokenQueryVariables = { token };
+  return serverGraphql(
+    ValidatePasswordResetTokenDocument,
+    variables,
+    "validatePasswordResetToken",
   );
-  if (!result.ok) {
-    return { ok: false as const, status: result.status, payload: { error: result.error } };
-  }
-  return {
-    ok: true as const,
-    status: 200,
-    payload: result.data.completeActivationTotp,
-  };
 }
 
-export async function validatePasswordResetToken(token: string) {
-  const result = await serverGraphql<{
-    validatePasswordResetToken: Record<string, unknown>;
-  }>(
-    `query ValidatePasswordResetToken($token: String!) {
-      validatePasswordResetToken(token: $token) {
-        valid
-        expiresAt
-      }
-    }`,
-    { token },
+export function completePasswordReset(
+  variables: CompletePasswordResetMutationVariables,
+) {
+  return serverGraphql(
+    CompletePasswordResetDocument,
+    variables,
+    "completePasswordReset",
   );
-  if (!result.ok) {
-    return { ok: false as const, status: result.status, payload: { error: result.error } };
-  }
-  return {
-    ok: true as const,
-    status: 200,
-    payload: result.data.validatePasswordResetToken,
-  };
-}
-
-export async function completePasswordReset(body: Record<string, unknown>) {
-  const result = await serverGraphql<{
-    completePasswordReset: Record<string, unknown>;
-  }>(
-    `mutation CompletePasswordReset(
-      $token: String!
-      $firstName: String
-      $lastName: String
-      $fullName: String
-      $password: String!
-      $confirmPassword: String!
-    ) {
-      completePasswordReset(
-        token: $token
-        firstName: $firstName
-        lastName: $lastName
-        fullName: $fullName
-        password: $password
-        confirmPassword: $confirmPassword
-      ) {
-        success
-      }
-    }`,
-    body,
-  );
-  if (!result.ok) {
-    return { ok: false as const, status: result.status, payload: { error: result.error } };
-  }
-  return {
-    ok: true as const,
-    status: 200,
-    payload: result.data.completePasswordReset,
-  };
 }

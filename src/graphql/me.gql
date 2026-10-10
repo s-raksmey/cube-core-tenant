@@ -1,0 +1,21 @@
+query Me {
+  me {
+    id
+    email
+    username
+    fullName
+    firstName
+    lastName
+    type
+    role
+    status
+    tenantId
+    tenant {
+      id
+      name
+      slug
+      type
+      status
+    }
+  }
+}

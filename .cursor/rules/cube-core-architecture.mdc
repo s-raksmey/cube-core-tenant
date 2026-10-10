@@ -16,16 +16,16 @@ When building any feature, **read those docs + existing code first**. Do not inv
 | `cube-core-server` | System of record: GraphQL, Prisma, auth, domain, audit |
 | `cube-core-admin` | Main console UI (SuperAdmin). BFF + Apollo → server |
 | `cube-core-tenant` | Sub-tenant console UI (Admin/Editor/Author). BFF + Apollo → server |
-| `cube-core-website` | Public marketing only — no privileged GraphQL |
+| `cube-core-website` | Public marketing site; public GraphQL reads only |
 
 - Domain logic lives in **server** `src/modules/*` services.
 - Resolvers stay thin — call services, never put business rules only in UI.
-- Admin: `/graphql` rewrite + Server Actions (no route proxy folder). Tenant may keep `app/auth` + `app/graphql` cookie proxies. Never localStorage tokens.
+- Frontend GraphQL documents live in `src/graphql/*.gql`; generated Apollo artifacts live in `src/lib/apollo/generated`. Admin and tenant authenticated requests use same-origin GraphQL BFF handlers that refresh/rotate HttpOnly sessions; never localStorage tokens or per-operation refresh Server Actions.
 
 ## Locked stack (do not swap)
 
 - Server: Node HTTP + TypeScript + Zod + PostgreSQL + Prisma 6 + GraphQL Yoga + SDL (`src/graphql/schema.graphql`), jose cookies, Argon2id/bcrypt verify
-- Frontends: Next.js App Router + Tailwind + **shadcn/ui** + Apollo Client (admin/tenant)
+- Frontends: Next.js App Router + Tailwind + **shadcn/ui** + Apollo Client and GraphQL Code Generator
 - No Nest, tRPC, Redux, alternate UI kits, or microservices for v1
 
 ## Tenancy & roles (hard)
@@ -59,12 +59,14 @@ Password reset: **SuperAdmin-generated links only** (no public forgot-password).
 ```text
 src/index.ts                                    # Node HTTP + Yoga → /graphql only
 src/modules/{auth,tenants,users,dashboard}/     # domain services
-src/graphql/{schema.graphql,resolvers.ts,context.ts}
+src/graphql/schema.graphql                      # single SDL
+src/graphql/resolvers/{auth,dashboard,tenants,users}/  # one op per *-resolver.ts
 src/lib/{db,auth,errors}
 prisma/schema.prisma
 ```
 
 - Server is **GraphQL-only** — no Next.js `app/`, no REST `/auth` or `/api`.
+- One SDL; resolvers split by domain folder. Business logic stays in `src/modules/*`.
 - Validate inputs with Zod in services.
 - Write `audit_logs` on privileged mutations.
 - Prefer unified `users` / memberships / sessions over inventing parallel auth tables.
@@ -75,6 +77,7 @@ prisma/schema.prisma
 - Admin User Management manages **MAIN SUPERADMIN memberships only**
 - Sub-tenant user invites: activation links (`createAdminUser` / tenant Users page)
 - Tenant app: strictly one sub-tenant scope; reject SuperAdmin at login
+- Website GraphQL is public-read only; never add privileged mutations
 - Tenant uses Next.js `src/` layout (`src/app`, `src/components`, `src/lib`); GraphQL via Apollo / BFF to server `/graphql`
 
 ## Feature checklist (before claiming done)

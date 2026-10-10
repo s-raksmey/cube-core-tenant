@@ -2,7 +2,7 @@
 
 import { useQuery } from "@apollo/client/react";
 import { FileText, HardDrive, Users, ShieldCheck } from "lucide-react";
-import { TENANT_DASHBOARD_QUERY } from "@/lib/graphql/operations";
+import { TENANT_DASHBOARD_QUERY } from "@/lib/apollo/operations";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { ChartPanel } from "@/components/dashboard/chart-panel";
 import { EmptyState } from "@/components/dashboard/empty-state";
@@ -20,36 +20,6 @@ import {
 } from "@/components/ui/table";
 import type { AuthUser } from "@/lib/types";
 
-type TenantDashboardData = {
-  tenantDashboard: {
-    tenant: {
-      id: string;
-      name: string;
-      slug: string;
-      status: "ACTIVE" | "SUSPENDED";
-    };
-    totalUsers: number;
-    activeUsers: number;
-    publishedContent: number;
-    mediaStorageBytes: number;
-    contentActivityByMonth: Array<{ month: string; count: number }>;
-    contentByStatus: Array<{ status: string; count: number }>;
-    recentUsers: Array<{
-      id: string;
-      email: string;
-      role: string;
-      status: string;
-      createdAt: string;
-    }>;
-    recentActivity: Array<{
-      id: string;
-      action: string;
-      createdAt: string;
-      actorEmail?: string | null;
-    }>;
-  };
-};
-
 function formatBytes(bytes: number) {
   if (bytes === 0) return "0 B";
   const units = ["B", "KB", "MB", "GB"];
@@ -61,9 +31,7 @@ function formatBytes(bytes: number) {
 }
 
 export function TenantDashboard({ user }: { user: AuthUser }) {
-  const { data, loading, error, refetch } = useQuery<TenantDashboardData>(
-    TENANT_DASHBOARD_QUERY,
-  );
+  const { data, loading, error, refetch } = useQuery(TENANT_DASHBOARD_QUERY);
   const dashboard = data?.tenantDashboard;
 
   return (
@@ -203,10 +171,12 @@ export function TenantDashboard({ user }: { user: AuthUser }) {
                     <TableCell className="font-medium">{member.email}</TableCell>
                     <TableCell>{member.role}</TableCell>
                     <TableCell>
-                      <StatusBadge status={member.status} />
+                      <StatusBadge status={member.status ?? "UNKNOWN"} />
                     </TableCell>
                     <TableCell>
-                      {new Date(member.createdAt).toLocaleDateString()}
+                      {member.createdAt
+                        ? new Date(member.createdAt).toLocaleDateString()
+                        : "—"}
                     </TableCell>
                   </TableRow>
                 ))}

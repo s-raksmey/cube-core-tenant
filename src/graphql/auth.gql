@@ -1,0 +1,69 @@
+fragment SessionUserFields on User {
+  id
+  email
+  username
+  fullName
+  firstName
+  lastName
+  type
+  role
+  status
+  tenantId
+  tenant {
+    id
+    name
+    slug
+    type
+    status
+  }
+}
+
+mutation Login(
+  $email: String!
+  $password: String!
+  $audience: LoginAudience = TENANT_APP
+) {
+  login(email: $email, password: $password, audience: $audience) {
+    ... on AuthChallenge {
+      challengeToken
+      nextStep
+      qrCodeDataUrl
+      manualEntryKey
+    }
+  }
+}
+
+mutation VerifyLoginTotp($challengeToken: String!, $code: String!) {
+  verifyLoginTotp(challengeToken: $challengeToken, code: $code) {
+    accessToken
+    refreshToken
+    user { ...SessionUserFields }
+  }
+}
+
+mutation VerifyTotpEnrollment($challengeToken: String!, $code: String!) {
+  verifyTotpEnrollment(challengeToken: $challengeToken, code: $code) {
+    accessToken
+    refreshToken
+    user { ...SessionUserFields }
+  }
+}
+
+mutation VerifyRecoveryCode($challengeToken: String!, $code: String!) {
+  verifyRecoveryCode(challengeToken: $challengeToken, code: $code) {
+    accessToken
+    refreshToken
+    user { ...SessionUserFields }
+  }
+}
+
+mutation RefreshSession($refreshToken: String!, $audience: LoginAudience!) {
+  refreshSession(refreshToken: $refreshToken, audience: $audience) {
+    accessToken
+    refreshToken
+  }
+}
+
+mutation Logout {
+  logout
+}

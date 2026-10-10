@@ -1,0 +1,37 @@
+query TenantDashboard {
+  tenantDashboard {
+    tenant {
+      id
+      name
+      slug
+      status
+    }
+    totalUsers
+    activeUsers
+    publishedContent
+    mediaStorageBytes
+    contentActivityByMonth {
+      month
+      count
+    }
+    contentByStatus {
+      status
+      count
+    }
+    recentUsers {
+      id
+      email
+      username
+      fullName
+      role
+      status
+      createdAt
+    }
+    recentActivity {
+      id
+      action
+      createdAt
+      actorEmail
+    }
+  }
+}

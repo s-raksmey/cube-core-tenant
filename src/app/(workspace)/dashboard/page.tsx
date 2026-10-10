@@ -1,16 +1,13 @@
 "use client";
 
 import { useQuery } from "@apollo/client/react";
-import { ME_QUERY } from "@/lib/graphql/operations";
+import { ME_QUERY } from "@/lib/apollo/operations";
 import { TenantDashboard } from "@/components/dashboard/tenant-dashboard";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { AuthUser } from "@/lib/types";
-
-type MeData = { me: AuthUser | null };
 
 export default function DashboardPage() {
-  const { data, loading } = useQuery<MeData>(ME_QUERY);
+  const { data, loading } = useQuery(ME_QUERY);
   const user = data?.me;
 
   if (loading) {
