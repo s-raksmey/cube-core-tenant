@@ -9,11 +9,11 @@ When the user asks you to **do / build / set up / add / implement / fix / change
 
 1. **Inspect** existing code + `cube-core-server/docs/` first.
 2. **Build completely** in the correct app (`tenant` app here; API/domain in `cube-core-server`).
-3. **Follow** locked stack, architecture, and roles in `cube-core-server/docs/`.
+3. **Follow** `.cursor/rules/cube-core-architecture.mdc` and `cube-core-server/docs/` (stack, architecture, roles, auth).
 4. **Update docs** in `cube-core-server/docs/` when product/architecture/roles change.
 5. **Reuse** Apollo Client, Zod, Tailwind, **shadcn/ui** (`components/ui`); keep strict sub-tenant scope.
 6. Summarize what changed and what to verify.
 
 **Exception:** `follow our rule` = teach only, do not fully implement. Do-it-for-me wins if both appear.
 
-Hard rules: reject SuperAdmin on tenant login; never cross tenant data; no alternate tech stack.
+Hard rules: reject SuperAdmin on tenant login; never cross tenant data; Admin + Editor + Author; unified identity; no alternate tech stack.
