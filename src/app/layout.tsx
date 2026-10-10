@@ -30,6 +30,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Cube Core Tenant",
   description: "Cube Core sub-tenant workspace",
+  referrer: "no-referrer",
 };
 
 export default function RootLayout({

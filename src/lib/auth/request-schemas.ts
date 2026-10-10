@@ -10,7 +10,6 @@ export const activationCredentialsSchema = z.object({
 export const activationTotpSchema = z.object({
   challengeToken: z.string().min(1),
   code: z.string().regex(/^\d{6}$/),
-  activationToken: z.string().min(1),
 });
 
 export const passwordResetSchema = z

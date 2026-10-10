@@ -32,7 +32,7 @@ export function applyAuthCookies(
     sameSite: "lax",
     secure,
     path: "/",
-    maxAge: 30,
+    maxAge: 5 * 60,
   });
   const otherAudience =
     input.audience === "ADMIN_CONSOLE" ? "TENANT_APP" : "ADMIN_CONSOLE";

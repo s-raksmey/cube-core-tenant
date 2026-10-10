@@ -25,6 +25,7 @@ export async function serverGraphql<
 ): Promise<GraphqlResult<TData[TField]>> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    "x-cube-auth-action-secret": process.env.TENANT_AUTH_ACTION_SECRET ?? "",
     ...(init?.accessToken
       ? { Authorization: `Bearer ${init.accessToken}` }
       : {}),

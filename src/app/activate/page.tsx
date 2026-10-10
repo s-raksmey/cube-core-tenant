@@ -14,7 +14,7 @@ type Step = "credentials" | "totp" | "recovery" | "done";
 function ActivateForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get("token") ?? "";
+  const [token] = useState(() => searchParams.get("token") ?? "");
 
   const [validating, setValidating] = useState(true);
   const [valid, setValid] = useState(false);
@@ -37,6 +37,9 @@ function ActivateForm() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (token) {
+      window.history.replaceState(window.history.state, "", "/activate");
+    }
     async function validate() {
       if (!token) {
         setValidating(false);
@@ -113,7 +116,6 @@ function ActivateForm() {
       body: JSON.stringify({
         challengeToken,
         code,
-        activationToken: token,
       }),
     });
     const payload = (await response.json()) as {
