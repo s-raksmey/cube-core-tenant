@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordField } from "@/components/auth/password-field";
 
 export default function PasswordResetPage() {
   const router = useRouter();
@@ -16,7 +17,7 @@ export default function PasswordResetPage() {
   const [validating, setValidating] = useState(true);
   const [valid, setValid] = useState(false);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
-  const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -38,9 +39,14 @@ export default function PasswordResetPage() {
         setValid(false);
         return;
       }
-      const payload = (await response.json()) as { valid?: boolean; expiresAt?: string };
+      const payload = (await response.json()) as {
+        valid?: boolean;
+        expiresAt?: string;
+        username?: string;
+      };
       setValid(!!payload.valid);
       setExpiresAt(payload.expiresAt ?? null);
+      setUsername(typeof payload.username === "string" ? payload.username : "");
     }
     void validate();
   }, [token]);
@@ -53,7 +59,7 @@ export default function PasswordResetPage() {
     const response = await fetch("/auth/password-reset/complete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, fullName, password, confirmPassword }),
+      body: JSON.stringify({ token, password, confirmPassword }),
     });
     const payload = (await response.json()) as { error?: string };
     setLoading(false);
@@ -101,7 +107,9 @@ export default function PasswordResetPage() {
             <CardTitle>Password updated</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            Sign in with your new password and complete two-factor authentication.
+            Your password was reset and two-factor authentication was cleared.
+            Sign in with your new password to scan a new QR code and save new
+            recovery codes.
           </CardContent>
         </Card>
       </div>
@@ -122,37 +130,28 @@ export default function PasswordResetPage() {
         <CardContent>
           <form className="space-y-4" onSubmit={onSubmit}>
             <div className="space-y-1.5">
-              <Label htmlFor="fullName">Full name</Label>
+              <Label htmlFor="username">Username</Label>
               <Input
-                id="fullName"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                autoComplete="name"
+                id="username"
+                value={username}
+                disabled
+                autoComplete="username"
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password">New password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="new-password"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="confirmPassword">Confirm new password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                autoComplete="new-password"
-              />
-            </div>
+            <PasswordField
+              id="password"
+              label="New password"
+              value={password}
+              onChange={setPassword}
+              autoComplete="new-password"
+            />
+            <PasswordField
+              id="confirmPassword"
+              label="Confirm new password"
+              value={confirmPassword}
+              onChange={setConfirmPassword}
+              autoComplete="new-password"
+            />
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Resetting…" : "Reset password"}

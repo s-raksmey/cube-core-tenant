@@ -76,7 +76,7 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
     () =>
       search
         ? "No users match your search."
-        : "Invite the first Admin, Editor, or Author for this tenant.",
+        : "Invite the first Admin or Editor for this tenant.",
     [search],
   );
 
@@ -323,7 +323,6 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
               >
                 <option value="ADMIN">ADMIN</option>
                 <option value="EDITOR">EDITOR</option>
-                <option value="AUTHOR">AUTHOR</option>
               </select>
             </div>
             {formError ? (

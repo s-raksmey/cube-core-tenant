@@ -13,7 +13,7 @@ export default function UsersPage() {
       <div>
         <PageHeader
           title="Users"
-          description="Manage Admin, Editor, and Author memberships for this tenant."
+          description="Manage Admin and Editor memberships for this tenant."
           crumbs={[
             { label: "Workspace", href: "/dashboard" },
             { label: "Users" },
@@ -29,7 +29,7 @@ export default function UsersPage() {
       <div>
         <PageHeader
           title="Users"
-          description="Manage Admin, Editor, and Author memberships for this tenant."
+          description="Manage Admin and Editor memberships for this tenant."
           crumbs={[
             { label: "Workspace", href: "/dashboard" },
             { label: "Users" },
@@ -44,7 +44,7 @@ export default function UsersPage() {
     <div>
       <PageHeader
         title="Users"
-        description="Manage Admin, Editor, and Author memberships for this tenant."
+        description="Manage Admin and Editor memberships for this tenant."
         crumbs={[
           { label: "Workspace", href: "/dashboard" },
           { label: "Users" },

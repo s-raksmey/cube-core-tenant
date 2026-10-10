@@ -15,13 +15,6 @@ export const activationTotpSchema = z.object({
 export const passwordResetSchema = z
   .object({
     token: z.string().min(1),
-    firstName: z.string().optional(),
-    lastName: z.string().optional(),
-    fullName: z.string().optional(),
     password: z.string().min(1),
     confirmPassword: z.string().min(1),
-  })
-  .refine(
-    (value) => Boolean(value.fullName?.trim() || value.firstName?.trim() || value.lastName?.trim()),
-    "Name is required",
-  );
+  });

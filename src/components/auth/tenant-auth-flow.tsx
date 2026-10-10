@@ -21,6 +21,12 @@ function goToDashboard() {
   window.location.assign("/dashboard");
 }
 
+function requiresFreshLogin(message: string) {
+  return /locked|challenge expired|challenge already used|invalid sign-in challenge|enrollment expired/i.test(
+    message,
+  );
+}
+
 export function TenantAuthFlow() {
   const [step, setStep] = useState<Step>("password");
   const [email, setEmail] = useState("");
@@ -103,9 +109,16 @@ export function TenantAuthFlow() {
         error?: string;
       };
       if (!response.ok) {
-        setError(payload.error ?? "Verification failed");
+        const message = payload.error ?? "Verification failed";
+        setError(message);
         setLoading(false);
         autoSubmitRef.current = false;
+        setCode("");
+        if (requiresFreshLogin(message)) {
+          setChallenge(null);
+          setUseRecoveryCode(false);
+          setStep("password");
+        }
         return;
       }
       goToDashboard();
@@ -113,6 +126,7 @@ export function TenantAuthFlow() {
       setError("Could not verify the code");
       setLoading(false);
       autoSubmitRef.current = false;
+      setCode("");
     }
   }
 
@@ -140,7 +154,7 @@ export function TenantAuthFlow() {
         <CardHeader>
           <CardTitle className="text-xl">Cube Core Tenant</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Sub-tenant Admin, Editor, or Author sign-in with mandatory
+            Sub-tenant Admin or Editor sign-in with mandatory
             two-factor authentication.
           </p>
         </CardHeader>
@@ -205,6 +219,7 @@ export function TenantAuthFlow() {
                   value={code}
                   onChange={(e) => {
                     setError(null);
+                    autoSubmitRef.current = false;
                     setCode(e.target.value.replace(/\D/g, "").slice(0, 6));
                   }}
                   required
@@ -232,6 +247,7 @@ export function TenantAuthFlow() {
                   value={code}
                   onChange={(e) => {
                     setError(null);
+                    autoSubmitRef.current = false;
                     setCode(
                       useRecoveryCode
                         ? e.target.value.trim().toUpperCase()

@@ -2,7 +2,7 @@
 export type MainTenantRole = "SUPERADMIN";
 
 /** Sub-tenant roles. */
-export type SubTenantRole = "ADMIN" | "EDITOR" | "AUTHOR";
+export type SubTenantRole = "ADMIN" | "EDITOR";
 
 export type UserRole = MainTenantRole | SubTenantRole;
 export type { UserStatus, UserType } from "@/lib/apollo/generated/graphql";

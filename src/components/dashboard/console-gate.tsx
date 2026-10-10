@@ -10,9 +10,7 @@ import type { AuthUser } from "@/lib/types";
 
 function isTenantRole(user: AuthUser) {
   return (
-    (user.role === "ADMIN" ||
-      user.role === "EDITOR" ||
-      user.role === "AUTHOR") &&
+    (user.role === "ADMIN" || user.role === "EDITOR") &&
     user.tenant.type === "SUB"
   );
 }
