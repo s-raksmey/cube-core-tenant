@@ -2,9 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client/react";
-import { Copy, Plus, Search } from "lucide-react";
+import { Copy, Plus, Search, Trash2 } from "lucide-react";
 import {
   CREATE_TENANT_USER,
+  DELETE_TENANT_USER,
   TENANT_USERS_QUERY,
 } from "@/lib/apollo/operations";
 import type { AuthUser, SubTenantRole } from "@/lib/types";
@@ -55,7 +56,15 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
   });
 
   const [createUser, { loading: creating }] = useMutation(CREATE_TENANT_USER);
+  const [deleteUser, { loading: deleting }] = useMutation(DELETE_TENANT_USER);
   const [createOpen, setCreateOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    username: string | null;
+    email: string;
+    role: string;
+  } | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -98,6 +107,23 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
       await refetch();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Could not create user");
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setDeleteError(null);
+    try {
+      await deleteUser({ variables: { id: deleteTarget.id } });
+      const nextTotal = Math.max(0, total - 1);
+      const nextPages = Math.max(1, Math.ceil(nextTotal / pageSize));
+      if (page > nextPages) setPage(nextPages);
+      setDeleteTarget(null);
+      await refetch({ page: Math.min(page, nextPages) });
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error ? err.message : "Could not remove user",
+      );
     }
   }
 
@@ -209,6 +235,9 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
                 <TableHead>Status</TableHead>
                 <TableHead>2FA</TableHead>
                 <TableHead>Created</TableHead>
+                {canManage ? (
+                  <TableHead className="text-right">Actions</TableHead>
+                ) : null}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -242,6 +271,29 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
                   <TableCell className="text-muted-foreground">
                     {formatDate(user.createdAt)}
                   </TableCell>
+                  {canManage ? (
+                    <TableCell className="text-right">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Remove ${user.username || user.email}`}
+                        title="Remove tenant access"
+                        disabled={user.id === viewer.id}
+                        onClick={() => {
+                          setDeleteError(null);
+                          setDeleteTarget({
+                            id: user.id,
+                            username: user.username,
+                            email: user.email,
+                            role: user.role,
+                          });
+                        }}
+                      >
+                        <Trash2 className="size-4 text-destructive" />
+                      </Button>
+                    </TableCell>
+                  ) : null}
                 </TableRow>
               ))}
             </TableBody>
@@ -348,6 +400,58 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
               }
             >
               {creating ? "Creating…" : "Create invite"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open && !deleting) {
+            setDeleteTarget(null);
+            setDeleteError(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove tenant user?</DialogTitle>
+            <DialogDescription>
+              This removes this user’s access to the current tenant and revokes
+              their tenant sessions. Their account is preserved if they still
+              have access to another tenant.
+            </DialogDescription>
+          </DialogHeader>
+          {deleteTarget ? (
+            <div className="rounded-md border p-3 text-sm">
+              <p className="font-medium">
+                {deleteTarget.username || deleteTarget.email}
+              </p>
+              <p className="text-muted-foreground">
+                {deleteTarget.email} · {deleteTarget.role}
+              </p>
+            </div>
+          ) : null}
+          {deleteError ? (
+            <p className="text-sm text-destructive">{deleteError}</p>
+          ) : null}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={deleting}
+              onClick={() => setDeleteTarget(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deleting}
+              onClick={handleDelete}
+            >
+              {deleting ? "Removing…" : "Remove user"}
             </Button>
           </DialogFooter>
         </DialogContent>

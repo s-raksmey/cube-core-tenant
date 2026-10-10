@@ -44,3 +44,7 @@ mutation CreateTenantUser(
     expiresAt
   }
 }
+
+mutation DeleteTenantUser($id: ID!) {
+  deleteTenantUser(id: $id)
+}
