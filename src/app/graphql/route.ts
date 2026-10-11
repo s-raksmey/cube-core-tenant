@@ -5,14 +5,18 @@ import { TENANT_AUDIENCE, authServerBaseUrl } from "@/lib/auth/console";
 import { isAccessTokenUsable } from "@/lib/auth/access-token";
 import {
   applyAuthCookies,
+  clearAuthCookies,
   readAccessToken,
   readRefreshToken,
 } from "@/lib/auth/cookies";
+
+const MAX_GRAPHQL_BODY_BYTES = 1_000_000;
 
 async function resolveAccessToken(): Promise<{
   accessToken: string | null;
   nextRefreshToken: string | null;
   shouldSetCookies: boolean;
+  shouldClearCookies: boolean;
 }> {
   const refreshToken = (await readRefreshToken(TENANT_AUDIENCE)) ?? null;
   const existing = await readAccessToken(TENANT_AUDIENCE);
@@ -22,6 +26,7 @@ async function resolveAccessToken(): Promise<{
       accessToken: existing,
       nextRefreshToken: refreshToken,
       shouldSetCookies: false,
+      shouldClearCookies: false,
     };
   }
 
@@ -30,29 +35,59 @@ async function resolveAccessToken(): Promise<{
       accessToken: null,
       nextRefreshToken: null,
       shouldSetCookies: false,
+      shouldClearCookies: Boolean(existing),
     };
   }
 
-  const refreshResponse = await fetch(`${authServerBaseUrl()}/graphql`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      query: print(RefreshSessionDocument),
-      variables: { refreshToken, audience: TENANT_AUDIENCE },
-    }),
-    cache: "no-store",
-  });
-
-  const json = (await refreshResponse.json()) as {
-    data?: { refreshSession?: { accessToken?: string; refreshToken?: string } };
-    errors?: unknown[];
-  };
-
-  if (!refreshResponse.ok || json.errors?.length) {
+  let refreshResponse: Response;
+  try {
+    refreshResponse = await fetch(`${authServerBaseUrl()}/graphql`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-cube-auth-action-secret":
+          process.env.TENANT_AUTH_ACTION_SECRET ?? "",
+      },
+      body: JSON.stringify({
+        query: print(RefreshSessionDocument),
+        variables: { refreshToken, audience: TENANT_AUDIENCE },
+      }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch {
     return {
       accessToken: null,
       nextRefreshToken: null,
       shouldSetCookies: false,
+      shouldClearCookies: false,
+    };
+  }
+
+  let json: {
+    data?: { refreshSession?: { accessToken?: string; refreshToken?: string } };
+    errors?: { extensions?: { code?: string } }[];
+  };
+  try {
+    json = (await refreshResponse.json()) as typeof json;
+  } catch {
+    return {
+      accessToken: null,
+      nextRefreshToken: null,
+      shouldSetCookies: false,
+      shouldClearCookies: false,
+    };
+  }
+
+  if (!refreshResponse.ok || json.errors?.length) {
+    const terminalFailure = json.errors?.some(({ extensions }) =>
+      ["UNAUTHENTICATED", "FORBIDDEN"].includes(extensions?.code ?? ""),
+    );
+    return {
+      accessToken: null,
+      nextRefreshToken: null,
+      shouldSetCookies: false,
+      shouldClearCookies: Boolean(terminalFailure),
     };
   }
 
@@ -62,33 +97,85 @@ async function resolveAccessToken(): Promise<{
     accessToken,
     nextRefreshToken,
     shouldSetCookies: Boolean(accessToken && nextRefreshToken),
+    shouldClearCookies: false,
   };
+}
+
+async function readBodyWithinLimit(request: Request): Promise<string | null> {
+  if (!request.body) return "";
+
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    totalBytes += value.byteLength;
+    if (totalBytes > MAX_GRAPHQL_BODY_BYTES) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+
+  const body = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(body);
 }
 
 export async function POST(request: Request) {
   const origin = request.headers.get("origin");
-  if (origin && origin !== new URL(request.url).origin) {
+  const fetchSite = request.headers.get("sec-fetch-site");
+  if (
+    (origin && origin !== new URL(request.url).origin) ||
+    fetchSite === "cross-site"
+  ) {
     return NextResponse.json({ errors: [{ message: "Cross-origin GraphQL request rejected" }] }, { status: 403 });
   }
-  const body = await request.text();
-  const { accessToken, nextRefreshToken, shouldSetCookies } =
+  const contentType = request.headers.get("content-type") ?? "";
+  if (contentType.split(";", 1)[0].trim().toLowerCase() !== "application/json") {
+    return NextResponse.json({ errors: [{ message: "GraphQL requests must use application/json" }] }, { status: 415 });
+  }
+  if (Number(request.headers.get("content-length") ?? 0) > MAX_GRAPHQL_BODY_BYTES) {
+    return NextResponse.json({ errors: [{ message: "GraphQL request is too large" }] }, { status: 413 });
+  }
+  const body = await readBodyWithinLimit(request);
+  if (body === null) {
+    return NextResponse.json({ errors: [{ message: "GraphQL request is too large" }] }, { status: 413 });
+  }
+
+  const { accessToken, nextRefreshToken, shouldSetCookies, shouldClearCookies } =
     await resolveAccessToken();
   const serverUrl =
     process.env.GRAPHQL_SERVER_URL ?? "http://localhost:4000/graphql";
 
-  const upstream = await fetch(serverUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    },
-    body,
-  });
+  let upstream: Response;
+  try {
+    upstream = await fetch(serverUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
+      body,
+      cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch {
+    return NextResponse.json({ errors: [{ message: "GraphQL service unavailable" }] }, { status: 502 });
+  }
 
   const text = await upstream.text();
   const response = new NextResponse(text, {
     status: upstream.status,
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": upstream.headers.get("content-type") ?? "application/json",
+      "Cache-Control": "no-store",
+    },
   });
 
   if (shouldSetCookies && accessToken && nextRefreshToken) {
@@ -97,6 +184,8 @@ export async function POST(request: Request) {
       accessToken,
       refreshToken: nextRefreshToken,
     });
+  } else if (shouldClearCookies) {
+    clearAuthCookies(response, TENANT_AUDIENCE);
   }
 
   return response;

@@ -15,4 +15,5 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Never retrieve credentials for display/list work (password hashes, TOTP secrets, recovery codes). Select only `enabledAt` to show whether 2FA is enabled.
 - Keep authorization and tenant scoping enforced by the server regardless of requested fields; omitted fields are not access control.
 - Keep pagination bounded. After SDL/operation changes, run `npm run graphql:codegen` and inspect generated operation types.
+- The same-origin GraphQL BFF must validate same-origin JSON requests, bound request size and upstream timeouts, and disable caching. Only trusted server-to-server auth operations such as refresh may send `TENANT_AUTH_ACTION_SECRET`; never expose it to browser code.
 - Follow `cube-core-server/docs/ARCHITECTURE.md` → “GraphQL field selection and data efficiency”.
