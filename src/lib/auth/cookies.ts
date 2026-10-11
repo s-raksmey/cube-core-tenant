@@ -34,18 +34,6 @@ export function applyAuthCookies(
     path: "/",
     maxAge: 5 * 60,
   });
-  const otherAudience =
-    input.audience === "ADMIN_CONSOLE" ? "TENANT_APP" : "ADMIN_CONSOLE";
-  response.cookies.set(REFRESH_BY_AUDIENCE[otherAudience], "", {
-    httpOnly: true,
-    path: "/",
-    maxAge: 0,
-  });
-  response.cookies.set(ACCESS_BY_AUDIENCE[otherAudience], "", {
-    httpOnly: true,
-    path: "/",
-    maxAge: 0,
-  });
 }
 
 export function clearAuthCookies(response: NextResponse, audience: ConsoleAudience) {

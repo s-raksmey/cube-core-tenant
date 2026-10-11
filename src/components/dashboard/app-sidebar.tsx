@@ -57,14 +57,6 @@ export function AppSidebar({ user }: { user: AuthUser }) {
         <div className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sm font-bold text-sidebar-primary-foreground">
           CC
         </div>
-        <div className="min-w-0 group-data-[collapsible=icon]:hidden">
-          <p className="truncate text-sm font-semibold text-sidebar-foreground">
-            Cube Core
-          </p>
-          <p className="truncate text-xs text-sidebar-foreground/70">
-            Tenant Workspace
-          </p>
-        </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>

@@ -1,23 +1,20 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useMutation, useQuery } from "@apollo/client/react";
-import { Copy, Plus, Search, Trash2 } from "lucide-react";
+import { useLazyQuery, useMutation, useQuery } from "@apollo/client/react";
+import { Copy, KeyRound, Link2, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import {
   CREATE_TENANT_USER,
   DELETE_TENANT_USER,
+  GENERATE_TENANT_USER_ACTIVATION,
+  GENERATE_TENANT_USER_PASSWORD_RESET,
+  TENANT_USER_ACTIVATION_LINK,
+  UPDATE_TENANT_USER,
   TENANT_USERS_QUERY,
 } from "@/lib/apollo/operations";
 import type { AuthUser, SubTenantRole } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -40,8 +37,16 @@ import { EmptyState } from "@/components/dashboard/empty-state";
 
 function formatDate(value?: string | null) {
   if (!value) return "—";
-  return new Date(value).toLocaleString();
+  return new Date(value).toLocaleDateString();
 }
+
+type TenantUserLinkTarget = {
+  id: string;
+  email: string;
+  username: string | null;
+  firstName: string | null;
+  lastName: string | null;
+};
 
 export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
   const canManage = viewer.role === "ADMIN";
@@ -57,7 +62,21 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
 
   const [createUser, { loading: creating }] = useMutation(CREATE_TENANT_USER);
   const [deleteUser, { loading: deleting }] = useMutation(DELETE_TENANT_USER);
+  const [generateActivation, { loading: regenerating }] = useMutation(GENERATE_TENANT_USER_ACTIVATION);
+  const [generateReset] = useMutation(GENERATE_TENANT_USER_PASSWORD_RESET);
+  const [updateUser, { loading: updating }] = useMutation(UPDATE_TENANT_USER);
+  const [loadActivationLink, { loading: loadingActivationLink }] = useLazyQuery(
+    TENANT_USER_ACTIVATION_LINK,
+    { fetchPolicy: "no-cache" },
+  );
   const [createOpen, setCreateOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<{
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    email: string;
+    role: SubTenantRole;
+  } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string;
     username: string | null;
@@ -75,6 +94,10 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
     expiresAt: string;
     label: string;
   } | null>(null);
+  const [activationTarget, setActivationTarget] = useState<TenantUserLinkTarget | null>(null);
+  const [activationLinkUser, setActivationLinkUser] = useState<TenantUserLinkTarget | null>(null);
+  const [activationLinkUnavailable, setActivationLinkUnavailable] = useState(false);
+  const [activationLookupFailed, setActivationLookupFailed] = useState(false);
 
   const pageData = data?.tenantUsers;
   const users = pageData?.items ?? [];
@@ -85,13 +108,30 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
     () =>
       search
         ? "No users match your search."
-        : "Invite the first Admin or Editor for this tenant.",
+        : "Create the first Admin or Editor for this tenant.",
     [search],
   );
 
   async function handleCreate() {
     setFormError(null);
     try {
+      if (editTarget) {
+        await updateUser({
+          variables: {
+            id: editTarget.id,
+            input: {
+              firstName,
+              lastName,
+              email,
+              ...(editTarget.id === viewer.id ? {} : { role }),
+            },
+          },
+        });
+        setCreateOpen(false);
+        setEditTarget(null);
+        await refetch();
+        return;
+      }
       const result = await createUser({
         variables: { firstName, lastName, email, role },
       });
@@ -124,6 +164,79 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
       setDeleteError(
         err instanceof Error ? err.message : "Could not remove user",
       );
+    }
+  }
+
+  async function confirmActivationLink() {
+    if (!activationTarget) return;
+    const user = activationTarget;
+    setFormError(null);
+    try {
+      const result = await generateActivation({ variables: { userId: user.id } });
+      const payload = result.data?.generateTenantUserActivationLink;
+      if (!payload) throw new Error("Could not generate activation link");
+      setActivationTarget(null);
+      setActivationLinkUser(null);
+      setActivationLinkUnavailable(false);
+      setActivationLookupFailed(false);
+      setLinkResult({ url: payload.activationUrl, expiresAt: payload.expiresAt, label: `Activation link for ${user.email}` });
+      await refetch();
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Could not reactivate user");
+    }
+  }
+
+  async function viewActivationLink(user: TenantUserLinkTarget) {
+    setFormError(null);
+    setActivationLinkUnavailable(false);
+    setActivationLookupFailed(false);
+    try {
+      const result = await loadActivationLink({ variables: { userId: user.id } });
+      const payload = result.data?.tenantUserActivationLink;
+      if (payload) {
+        setActivationLinkUser(user);
+        setLinkResult({
+          url: payload.activationUrl,
+          expiresAt: payload.expiresAt,
+          label: `Activation link for ${user.email}`,
+        });
+        return;
+      }
+      setActivationLinkUnavailable(true);
+      setActivationTarget(user);
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Could not retrieve the activation link");
+      setActivationLookupFailed(true);
+      setActivationTarget(user);
+    }
+  }
+
+  function requestActivationRegeneration() {
+    if (!activationLinkUser) return;
+    setLinkResult(null);
+    setActivationTarget(activationLinkUser);
+    setActivationLinkUser(null);
+    setActivationLinkUnavailable(false);
+    setActivationLookupFailed(false);
+    setFormError(null);
+  }
+
+  function retryActivationLookup() {
+    if (!activationTarget) return;
+    const user = activationTarget;
+    setActivationTarget(null);
+    void viewActivationLink(user);
+  }
+
+  async function showPasswordResetLink(user: { id: string; email: string }) {
+    setFormError(null);
+    try {
+      const result = await generateReset({ variables: { userId: user.id } });
+      const payload = result.data?.generateTenantUserPasswordResetLink;
+      if (!payload) throw new Error("Could not generate password reset link");
+      setLinkResult({ url: payload.resetUrl, expiresAt: payload.expiresAt, label: `Password reset link for ${user.email}` });
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Could not generate password reset link");
     }
   }
 
@@ -166,52 +279,15 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
               setEmail("");
               setRole("EDITOR");
               setFormError(null);
+              setEditTarget(null);
               setCreateOpen(true);
             }}
           >
             <Plus className="size-4" />
-            Invite user
+            Create User
           </Button>
         ) : null}
       </div>
-
-      {linkResult ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">{linkResult.label}</CardTitle>
-            <CardDescription>
-              Expires {formatDate(linkResult.expiresAt)}. The invitee sets a
-              username, password, 2FA, and recovery codes.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="break-all rounded-md bg-muted p-3 text-sm">
-              {linkResult.url}
-            </p>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  void navigator.clipboard.writeText(linkResult.url)
-                }
-              >
-                <Copy className="size-4" />
-                Copy link
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setLinkResult(null)}
-              >
-                Dismiss
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
 
       {loading && !pageData ? (
         <p className="text-sm text-muted-foreground">Loading users…</p>
@@ -235,6 +311,7 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
                 <TableHead>Status</TableHead>
                 <TableHead>2FA</TableHead>
                 <TableHead>Created</TableHead>
+                <TableHead>Last login</TableHead>
                 {canManage ? (
                   <TableHead className="text-right">Actions</TableHead>
                 ) : null}
@@ -271,27 +348,52 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
                   <TableCell className="text-muted-foreground">
                     {formatDate(user.createdAt)}
                   </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {formatDate(user.lastLoginAt)}
+                  </TableCell>
                   {canManage ? (
                     <TableCell className="text-right">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Remove ${user.username || user.email}`}
-                        title="Remove tenant access"
-                        disabled={user.id === viewer.id}
-                        onClick={() => {
-                          setDeleteError(null);
-                          setDeleteTarget({
-                            id: user.id,
-                            username: user.username,
-                            email: user.email,
-                            role: user.role,
-                          });
-                        }}
-                      >
-                        <Trash2 className="size-4 text-destructive" />
-                      </Button>
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Edit ${user.username || user.email}`}
+                          title="Edit user"
+                          onClick={() => {
+                            setEditTarget({
+                              id: user.id,
+                              firstName: user.firstName,
+                              lastName: user.lastName,
+                              email: user.email,
+                              role: user.role as SubTenantRole,
+                            });
+                            setFirstName(user.firstName ?? "");
+                            setLastName(user.lastName ?? "");
+                            setEmail(user.email);
+                            setRole(user.role as SubTenantRole);
+                            setFormError(null);
+                            setCreateOpen(true);
+                          }}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                        {user.id !== viewer.id ? (
+                          <>
+                        {user.status === "PENDING" ? (
+                        <Button type="button" variant="ghost" size="icon" aria-label={`View activation link for ${user.username || user.email}`} title="View activation link" disabled={loadingActivationLink || regenerating} onClick={() => void viewActivationLink(user)}>
+                          <Link2 className="size-4" />
+                        </Button>
+                        ) : null}
+                        <Button type="button" variant="ghost" size="icon" aria-label={`Reset password for ${user.username || user.email}`} title="Reset password" disabled={user.status !== "ACTIVE" && user.status !== "LOCKED"} onClick={() => void showPasswordResetLink(user)}>
+                          <KeyRound className="size-4" />
+                        </Button>
+                        <Button type="button" variant="ghost" size="icon" aria-label={`Remove ${user.username || user.email}`} title="Remove tenant access" onClick={() => { setDeleteError(null); setDeleteTarget({ id: user.id, username: user.username, email: user.email, role: user.role }); }}>
+                          <Trash2 className="size-4 text-destructive" />
+                        </Button>
+                          </>
+                      ) : null}
+                      </div>
                     </TableCell>
                   ) : null}
                 </TableRow>
@@ -327,13 +429,25 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
         </div>
       ) : null}
 
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+      <Dialog
+        open={createOpen}
+        onOpenChange={(open) => {
+          setCreateOpen(open);
+          if (!open) {
+            setEditTarget(null);
+            setFormError(null);
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Invite user</DialogTitle>
+            <DialogTitle>{editTarget ? "Edit User" : "Create User"}</DialogTitle>
             <DialogDescription>
-              Creates a PENDING membership. They activate with username,
-              password, 2FA, and recovery codes.
+              {editTarget
+                ? editTarget.id === viewer.id
+                  ? "Update your profile. Your role and account status cannot be changed here."
+                  : "Update this tenant user's profile."
+                : "Creates a PENDING tenant account. They activate with username, password, 2FA, and recovery codes."}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -365,18 +479,20 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="tu-role">Role</Label>
-              <select
-                id="tu-role"
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-                value={role}
-                onChange={(e) => setRole(e.target.value as SubTenantRole)}
-              >
-                <option value="ADMIN">ADMIN</option>
-                <option value="EDITOR">EDITOR</option>
-              </select>
-            </div>
+            {editTarget?.id === viewer.id ? null : (
+              <div className="space-y-1.5">
+                <Label htmlFor="tu-role">Role</Label>
+                <select
+                  id="tu-role"
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as SubTenantRole)}
+                >
+                  <option value="ADMIN">ADMIN</option>
+                  <option value="EDITOR">EDITOR</option>
+                </select>
+              </div>
+            )}
             {formError ? (
               <p className="text-sm text-destructive">{formError}</p>
             ) : null}
@@ -394,13 +510,99 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
               onClick={handleCreate}
               disabled={
                 creating ||
+                updating ||
                 !firstName.trim() ||
                 !lastName.trim() ||
                 !email.trim()
               }
             >
-              {creating ? "Creating…" : "Create invite"}
+              {creating || updating ? "Saving…" : editTarget ? "Save changes" : "Create User"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={activationTarget !== null}
+        onOpenChange={(open) => {
+          if (!open && !regenerating) {
+            setActivationTarget(null);
+            setFormError(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {activationLookupFailed
+                ? "Could not retrieve the activation link"
+                : activationLinkUnavailable
+                  ? "No existing link is available"
+                  : "Regenerate activation link?"}
+            </DialogTitle>
+            <DialogDescription>
+              {activationLookupFailed
+                ? "The existing link was not changed. Retry to view it, or regenerate a replacement link."
+                : activationLinkUnavailable
+                  ? "The existing link has expired, was used, or cannot be recovered. Generate a new single-use activation link for this pending user."
+                  : "The existing activation link will be revoked. Only the new single-use link will work."}
+            </DialogDescription>
+          </DialogHeader>
+          {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={regenerating}
+              onClick={() => {
+                setActivationTarget(null);
+                setFormError(null);
+              }}
+            >
+              Cancel
+            </Button>
+            {activationLookupFailed ? (
+              <Button type="button" variant="outline" disabled={loadingActivationLink || regenerating} onClick={retryActivationLookup}>
+                Retry
+              </Button>
+            ) : null}
+            <Button type="button" disabled={regenerating} onClick={() => void confirmActivationLink()}>
+              {regenerating ? "Regenerating…" : "Regenerate link"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={linkResult !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setLinkResult(null);
+            setActivationLinkUser(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{linkResult?.label ?? "Secure link"}</DialogTitle>
+            <DialogDescription>
+              Expires {linkResult?.expiresAt ? new Date(linkResult.expiresAt).toLocaleString() : "—"}. Copy and deliver through an approved channel. The link is single-use.
+            </DialogDescription>
+          </DialogHeader>
+          <p className="break-all rounded-md bg-muted p-3 text-sm">{linkResult?.url}</p>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setLinkResult(null)}>
+              Close
+            </Button>
+            <Button type="button" onClick={() => linkResult ? void navigator.clipboard.writeText(linkResult.url) : undefined}>
+              <Copy className="size-4" />
+              Copy link
+            </Button>
+            {activationLinkUser ? (
+              <Button type="button" variant="outline" onClick={requestActivationRegeneration}>
+                Regenerate link
+              </Button>
+            ) : null}
           </DialogFooter>
         </DialogContent>
       </Dialog>

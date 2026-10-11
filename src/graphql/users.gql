@@ -48,3 +48,22 @@ mutation CreateTenantUser(
 mutation DeleteTenantUser($id: ID!) {
   deleteTenantUser(id: $id)
 }
+
+mutation UpdateTenantUser($id: ID!, $input: UpdateTenantUserInput!) {
+  updateTenantUser(id: $id, input: $input) { id email firstName lastName role status }
+}
+
+query TenantUserActivationLink($userId: ID!) {
+  tenantUserActivationLink(userId: $userId) {
+    activationUrl
+    expiresAt
+  }
+}
+
+mutation GenerateTenantUserActivationLink($userId: ID!) {
+  generateTenantUserActivationLink(userId: $userId) { activationUrl expiresAt }
+}
+
+mutation GenerateTenantUserPasswordResetLink($userId: ID!) {
+  generateTenantUserPasswordResetLink(userId: $userId) { resetUrl expiresAt }
+}

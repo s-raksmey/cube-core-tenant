@@ -22,8 +22,14 @@ mutation Login(
   $email: String!
   $password: String!
   $audience: LoginAudience = TENANT_APP
+  $tenantHostname: String
 ) {
-  login(email: $email, password: $password, audience: $audience) {
+  login(
+    email: $email
+    password: $password
+    audience: $audience
+    tenantHostname: $tenantHostname
+  ) {
     ... on AuthChallenge {
       challengeToken
       nextStep

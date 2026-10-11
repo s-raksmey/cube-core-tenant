@@ -78,6 +78,7 @@ prisma/schema.prisma
 - Sub-tenant user invites: activation links (`createAdminUser` / tenant Users page)
 - Tenant app: strictly one sub-tenant scope; reject SuperAdmin at login
 - Website GraphQL is public-read only; never add privileged mutations
+- Tenant domains map normalized unique MANAGEMENT / WEBSITE hostnames to the stable tenant UUID. Only verified `ACTIVE` mappings route production traffic; saved domains remain pending until ownership and hosting/HTTPS setup are complete. `tenantByHostname` is public identity resolution only; never use hostname as authentication or authorization. For shared/local tenant-app URLs, require explicit active tenant slug selection and resolve it server-side to the stable tenant UUID before login; never use a caller-supplied UUID as authorization. Trust forwarded host headers only from explicitly trusted infrastructure.
 - Tenant uses Next.js `src/` layout (`src/app`, `src/components`, `src/lib`); GraphQL via Apollo / BFF to server `/graphql`
 
 ## Feature checklist (before claiming done)

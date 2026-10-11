@@ -9,6 +9,7 @@ import {
   readAccessToken,
   readRefreshToken,
 } from "@/lib/auth/cookies";
+import { managementHostFromRequest } from "@/lib/tenant-hostname";
 
 const MAX_GRAPHQL_BODY_BYTES = 1_000_000;
 
@@ -150,8 +151,11 @@ export async function POST(request: Request) {
 
   const { accessToken, nextRefreshToken, shouldSetCookies, shouldClearCookies } =
     await resolveAccessToken();
-  const serverUrl =
-    process.env.GRAPHQL_SERVER_URL ?? "http://localhost:4000/graphql";
+  const managementHost = managementHostFromRequest(request);
+  if (managementHost.kind === "invalid") {
+    return NextResponse.json({ errors: [{ message: "Invalid tenant console host" }] }, { status: 400 });
+  }
+  const serverUrl = `${authServerBaseUrl()}/graphql`;
 
   let upstream: Response;
   try {
@@ -160,6 +164,9 @@ export async function POST(request: Request) {
       headers: {
         "Content-Type": "application/json",
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        ...(managementHost.kind === "domain"
+          ? { "x-cube-tenant-management-host": managementHost.hostname }
+          : {}),
       },
       body,
       cache: "no-store",
@@ -178,7 +185,11 @@ export async function POST(request: Request) {
     },
   });
 
-  if (shouldSetCookies && accessToken && nextRefreshToken) {
+  const sessionRejected = Boolean(accessToken && hasUnauthenticatedError(text));
+
+  if (sessionRejected) {
+    clearAuthCookies(response, TENANT_AUDIENCE);
+  } else if (shouldSetCookies && accessToken && nextRefreshToken) {
     applyAuthCookies(response, {
       audience: TENANT_AUDIENCE,
       accessToken,
@@ -189,4 +200,17 @@ export async function POST(request: Request) {
   }
 
   return response;
+}
+
+function hasUnauthenticatedError(responseText: string) {
+  try {
+    const payload = JSON.parse(responseText) as {
+      errors?: { extensions?: { code?: string } }[];
+    };
+    return payload.errors?.some(
+      (error) => error.extensions?.code === "UNAUTHENTICATED",
+    ) ?? false;
+  } catch {
+    return false;
+  }
 }

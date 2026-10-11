@@ -6,7 +6,7 @@ export const ACCESS_COOKIE = "management_console_tenant_access";
 export function authServerBaseUrl() {
   const base =
     process.env.AUTH_SERVER_URL ??
-    process.env.GRAPHQL_SERVER_URL?.replace(/\/graphql\/?$/, "") ??
+    process.env.GRAPHQL_SERVER_URL?.replace(/\/(?:api\/)?graphql\/?$/i, "") ??
     "http://localhost:4000";
   return base.replace(/\/$/, "");
 }

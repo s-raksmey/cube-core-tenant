@@ -27,7 +27,11 @@ function requiresFreshLogin(message: string) {
   );
 }
 
-export function TenantAuthFlow() {
+export function TenantAuthFlow({
+  tenantName,
+}: {
+  tenantName: string;
+}) {
   const [step, setStep] = useState<Step>("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -46,7 +50,10 @@ export function TenantAuthFlow() {
       const response = await fetch("/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password }),
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+        }),
       });
       const payload = (await response.json()) as {
         challengeToken?: string;
@@ -152,7 +159,9 @@ export function TenantAuthFlow() {
     <div className="flex min-h-svh items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md border-border shadow-none">
         <CardHeader>
-          <CardTitle className="text-xl">Cube Core Tenant</CardTitle>
+          <CardTitle className="text-xl">
+            {`Sign in to ${tenantName}`}
+          </CardTitle>
           <p className="text-sm text-muted-foreground">
             Sub-tenant Admin or Editor sign-in with mandatory
             two-factor authentication.

@@ -12,8 +12,8 @@ export default function UsersPage() {
     return (
       <div>
         <PageHeader
-          title="Users"
-          description="Manage Admin and Editor memberships for this tenant."
+          title="User Management"
+          description="Manage Admin and Editor users authorized to access this tenant console."
           crumbs={[
             { label: "Workspace", href: "/dashboard" },
             { label: "Users" },
@@ -28,8 +28,8 @@ export default function UsersPage() {
     return (
       <div>
         <PageHeader
-          title="Users"
-          description="Manage Admin and Editor memberships for this tenant."
+          title="User Management"
+          description="Manage Admin and Editor users authorized to access this tenant console."
           crumbs={[
             { label: "Workspace", href: "/dashboard" },
             { label: "Users" },
@@ -43,8 +43,8 @@ export default function UsersPage() {
   return (
     <div>
       <PageHeader
-        title="Users"
-        description="Manage Admin and Editor memberships for this tenant."
+        title="User Management"
+        description="Manage Admin and Editor users authorized to access this tenant console."
         crumbs={[
           { label: "Workspace", href: "/dashboard" },
           { label: "Users" },

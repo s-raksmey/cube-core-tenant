@@ -30,6 +30,7 @@ export async function loginWithPassword(input: {
   email: string;
   password: string;
   audience?: ConsoleAudience;
+  tenantHostname?: string;
 }) {
   const result = await serverGraphql(
     LoginDocument,
@@ -37,6 +38,7 @@ export async function loginWithPassword(input: {
       email: input.email,
       password: input.password,
       audience: input.audience ?? TENANT_AUDIENCE,
+      tenantHostname: input.tenantHostname,
     },
     "login",
   );

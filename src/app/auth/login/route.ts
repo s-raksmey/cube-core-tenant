@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { loginWithPassword } from "@/lib/auth/upstream";
+import { managementHostFromRequest } from "@/lib/tenant-hostname";
 
 const loginBodySchema = z.object({
   /** Username or email. */
@@ -19,7 +20,29 @@ export async function POST(request: Request) {
   }
 
   try {
-    const payload = await loginWithPassword(parsed.data);
+    const host = managementHostFromRequest(request);
+    if (host.kind === "domain") {
+      const payload = await loginWithPassword({
+        email: parsed.data.email,
+        password: parsed.data.password,
+        tenantHostname: host.hostname,
+      });
+      return NextResponse.json(payload);
+    }
+
+    const localDevelopment =
+      host.kind === "local" && process.env.NODE_ENV !== "production";
+    if (!localDevelopment) {
+      return NextResponse.json(
+        { error: "This tenant console address is unavailable" },
+        { status: 404 },
+      );
+    }
+    const payload = await loginWithPassword({
+      email: parsed.data.email,
+      password: parsed.data.password,
+      tenantHostname: "localhost",
+    });
     return NextResponse.json(payload);
   } catch (error) {
     return NextResponse.json(

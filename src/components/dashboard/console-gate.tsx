@@ -31,20 +31,26 @@ export function ConsoleGate({ children }: { children: React.ReactNode }) {
     if (allowed) return;
 
     let cancelled = false;
-    const timer = window.setTimeout(() => {
-      void (async () => {
-        const result = await refetch();
+    const redirectToLogin = () => {
+      if (cancelled) return;
+      redirected.current = true;
+      router.replace("/login");
+    };
+
+    // Give the BFF one chance to refresh an expired access token. If that
+    // refresh fails (or the account no longer has tenant access), leave the
+    // protected route instead of leaving the workspace skeleton on screen.
+    void refetch()
+      .then(({ data: refreshedData }) => {
         if (cancelled) return;
-        const next = result.data?.me ?? null;
+        const next = refreshedData?.me ?? null;
         if (next && isTenantRole(next)) return;
-        redirected.current = true;
-        router.replace("/login");
-      })();
-    }, 250);
+        redirectToLogin();
+      })
+      .catch(redirectToLogin);
 
     return () => {
       cancelled = true;
-      window.clearTimeout(timer);
     };
   }, [loading, allowed, refetch, router]);
 
