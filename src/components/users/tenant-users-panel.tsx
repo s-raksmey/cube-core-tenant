@@ -57,7 +57,7 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
 
   const { data: permissionsData, loading: loadingPermissions, error: permissionsError } = useQuery(
     TENANT_USER_PERMISSIONS_QUERY,
-    { fetchPolicy: "cache-first" },
+    { fetchPolicy: "cache-and-network" },
   );
   const tenantPermissions = new Set(permissionsData?.tenantUserPermissions ?? []);
   const canViewUsers = tenantPermissions.has("USERS_VIEW");
@@ -367,7 +367,9 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
                   <TableCell>
                     <Badge
                       variant={
-                        user.status === "ACTIVE"
+                        user.membershipStatus === "DISABLED"
+                          ? "destructive"
+                          : user.status === "ACTIVE"
                           ? "default"
                           : user.status === "PENDING"
                             ? "secondary"
@@ -688,9 +690,8 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
             <DialogTitle>Delete tenant user?</DialogTitle>
             <DialogDescription>
               Suspend this user first. Once suspended, deleting permanently
-              removes their access to the current tenant and revokes their tenant
-              sessions. Their account is preserved if they still have access to
-              another tenant.
+              permanently removes their account, credentials, and sessions from
+              the database.
             </DialogDescription>
           </DialogHeader>
           {deleteTarget ? (
