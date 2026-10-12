@@ -54,7 +54,7 @@ async function TenantLogin({
 export async function generateMetadata(): Promise<Metadata> {
   const host = managementHostFromHeader((await headers()).get("host"));
   const tenant = await resolveTenant(host);
-  return { title: tenant ? `Sign in to ${tenant.name}` : "Tenant unavailable" };
+  return { title: tenant?.name ?? "Tenant unavailable" };
 }
 
 async function TenantLoginForRequest() {

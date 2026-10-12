@@ -2,13 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client/react";
-import { Copy, KeyRound, Link2, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Copy, KeyRound, Link2, Pencil, Plus, RotateCcw, Search, Trash2 } from "lucide-react";
 import {
   CREATE_TENANT_USER,
   DELETE_TENANT_USER,
   GENERATE_TENANT_USER_ACTIVATION,
   GENERATE_TENANT_USER_PASSWORD_RESET,
   TENANT_USER_ACTIVATION_LINK,
+  TENANT_USER_PERMISSIONS_QUERY,
   UPDATE_TENANT_USER,
   TENANT_USERS_QUERY,
 } from "@/lib/apollo/operations";
@@ -49,15 +50,30 @@ type TenantUserLinkTarget = {
 };
 
 export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
-  const canManage = viewer.role === "ADMIN";
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
+  const { data: permissionsData, loading: loadingPermissions, error: permissionsError } = useQuery(
+    TENANT_USER_PERMISSIONS_QUERY,
+    { fetchPolicy: "cache-first" },
+  );
+  const tenantPermissions = new Set(permissionsData?.tenantUserPermissions ?? []);
+  const canViewUsers = tenantPermissions.has("USERS_VIEW");
+  const canCreateUsers = tenantPermissions.has("USERS_CREATE");
+  const canEditUsers = tenantPermissions.has("USERS_EDIT");
+  const canChangeRoles = tenantPermissions.has("USERS_CHANGE_ROLE");
+  const canActivateUsers = tenantPermissions.has("USERS_ACTIVATE");
+  const canResetPasswords = tenantPermissions.has("USERS_RESET_PASSWORD");
+  const canSuspendUsers = tenantPermissions.has("USERS_SUSPEND");
+  const canDeleteUsers = tenantPermissions.has("USERS_DELETE");
+  const hasAnyUserAction = canEditUsers || canChangeRoles || canActivateUsers || canSuspendUsers || canResetPasswords || canDeleteUsers;
+
   const { data, loading, error, refetch } = useQuery(TENANT_USERS_QUERY, {
     variables: { search: search || null, page, pageSize },
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "cache-first",
+    skip: !canViewUsers,
   });
 
   const [createUser, { loading: creating }] = useMutation(CREATE_TENANT_USER);
@@ -76,6 +92,8 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
     lastName: string | null;
     email: string;
     role: SubTenantRole;
+    status: string | null;
+    membershipStatus: string | null;
   } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string;
@@ -88,6 +106,7 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<SubTenantRole>("EDITOR");
+  const [accountStatus, setAccountStatus] = useState<"ACTIVE" | "INACTIVE">("ACTIVE");
   const [formError, setFormError] = useState<string | null>(null);
   const [linkResult, setLinkResult] = useState<{
     url: string;
@@ -123,7 +142,11 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
               firstName,
               lastName,
               email,
-              ...(editTarget.id === viewer.id ? {} : { role }),
+              ...(editTarget.id === viewer.id || !canChangeRoles ? {} : { role }),
+              ...(editTarget.id === viewer.id || !canSuspendUsers ||
+                accountStatus === (editTarget.membershipStatus === "DISABLED" ? "INACTIVE" : "ACTIVE")
+                ? {}
+                : { suspended: accountStatus === "INACTIVE" }),
             },
           },
         });
@@ -270,14 +293,15 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
             Search
           </Button>
         </div>
-        {canManage ? (
+        {canCreateUsers ? (
           <Button
             type="button"
             onClick={() => {
               setFirstName("");
               setLastName("");
               setEmail("");
-              setRole("EDITOR");
+              setRole(canChangeRoles ? "ADMIN" : "EDITOR");
+              setAccountStatus("ACTIVE");
               setFormError(null);
               setEditTarget(null);
               setCreateOpen(true);
@@ -289,17 +313,26 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
         ) : null}
       </div>
 
-      {loading && !pageData ? (
+      {loadingPermissions ? (
+        <p className="text-sm text-muted-foreground">Loading permissions…</p>
+      ) : null}
+      {permissionsError ? (
+        <p className="text-sm text-destructive">Unable to load your user-management permissions.</p>
+      ) : null}
+      {!loadingPermissions && !permissionsError && !canViewUsers ? (
+        <EmptyState title="User Management unavailable" description="Your role does not have permission to view users." />
+      ) : null}
+      {canViewUsers && loading && !pageData ? (
         <p className="text-sm text-muted-foreground">Loading users…</p>
       ) : null}
-      {error ? (
+      {canViewUsers && error ? (
         <p className="text-sm text-destructive">Unable to load users.</p>
       ) : null}
-      {!loading && !error && users.length === 0 ? (
+      {canViewUsers && !loading && !error && users.length === 0 ? (
         <EmptyState title="No users found" description={emptyDescription} />
       ) : null}
 
-      {users.length > 0 ? (
+      {canViewUsers && users.length > 0 ? (
         <div className="rounded-xl border border-border bg-card">
           <Table>
             <TableHeader>
@@ -312,7 +345,7 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
                 <TableHead>2FA</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead>Last login</TableHead>
-                {canManage ? (
+                {hasAnyUserAction ? (
                   <TableHead className="text-right">Actions</TableHead>
                 ) : null}
               </TableRow>
@@ -341,7 +374,7 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
                             : "destructive"
                       }
                     >
-                      {user.status}
+                      {user.membershipStatus === "DISABLED" ? "SUSPENDED" : user.status}
                     </Badge>
                   </TableCell>
                   <TableCell>{user.totpEnabled ? "On" : "Off"}</TableCell>
@@ -351,10 +384,10 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
                   <TableCell className="text-muted-foreground">
                     {formatDate(user.lastLoginAt)}
                   </TableCell>
-                  {canManage ? (
+                  {hasAnyUserAction ? (
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button
+                        {canEditUsers || canChangeRoles || canSuspendUsers ? <Button
                           type="button"
                           variant="ghost"
                           size="icon"
@@ -367,30 +400,33 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
                               lastName: user.lastName,
                               email: user.email,
                               role: user.role as SubTenantRole,
+                              status: user.status,
+                              membershipStatus: user.membershipStatus,
                             });
                             setFirstName(user.firstName ?? "");
                             setLastName(user.lastName ?? "");
                             setEmail(user.email);
                             setRole(user.role as SubTenantRole);
+                            setAccountStatus(user.membershipStatus === "DISABLED" ? "INACTIVE" : "ACTIVE");
                             setFormError(null);
                             setCreateOpen(true);
                           }}
                         >
                           <Pencil className="size-4" />
-                        </Button>
+                        </Button> : null}
                         {user.id !== viewer.id ? (
                           <>
-                        {user.status === "PENDING" ? (
-                        <Button type="button" variant="ghost" size="icon" aria-label={`View activation link for ${user.username || user.email}`} title="View activation link" disabled={loadingActivationLink || regenerating} onClick={() => void viewActivationLink(user)}>
-                          <Link2 className="size-4" />
+                        {canActivateUsers && (user.status === "PENDING" || user.status === "ACTIVE") ? (
+                        <Button type="button" variant="ghost" size="icon" aria-label={`${user.status === "ACTIVE" ? "Reactivate" : "View activation link for"} ${user.username || user.email}`} title={user.status === "ACTIVE" ? "Reactivate account and reset 2FA" : "View activation link"} disabled={loadingActivationLink || regenerating} onClick={() => void viewActivationLink(user)}>
+                          {user.status === "ACTIVE" ? <RotateCcw className="size-4" /> : <Link2 className="size-4" />}
                         </Button>
                         ) : null}
-                        <Button type="button" variant="ghost" size="icon" aria-label={`Reset password for ${user.username || user.email}`} title="Reset password" disabled={user.status !== "ACTIVE" && user.status !== "LOCKED"} onClick={() => void showPasswordResetLink(user)}>
+                        {canResetPasswords ? <Button type="button" variant="ghost" size="icon" aria-label={`Reset password for ${user.username || user.email}`} title="Reset password" disabled={user.status !== "ACTIVE" && user.status !== "LOCKED"} onClick={() => void showPasswordResetLink(user)}>
                           <KeyRound className="size-4" />
-                        </Button>
-                        <Button type="button" variant="ghost" size="icon" aria-label={`Remove ${user.username || user.email}`} title="Remove tenant access" onClick={() => { setDeleteError(null); setDeleteTarget({ id: user.id, username: user.username, email: user.email, role: user.role }); }}>
+                        </Button> : null}
+                        {canDeleteUsers ? <Button type="button" variant="ghost" size="icon" aria-label={`Delete ${user.username || user.email}`} title="Delete tenant user" onClick={() => { setDeleteError(null); setDeleteTarget({ id: user.id, username: user.username, email: user.email, role: user.role }); }}>
                           <Trash2 className="size-4 text-destructive" />
-                        </Button>
+                        </Button> : null}
                           </>
                       ) : null}
                       </div>
@@ -458,6 +494,7 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
                   id="tu-first"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
+                  disabled={Boolean(editTarget) && !canEditUsers}
                   autoFocus
                 />
               </div>
@@ -467,6 +504,7 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
                   id="tu-last"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
+                  disabled={Boolean(editTarget) && !canEditUsers}
                 />
               </div>
             </div>
@@ -477,9 +515,10 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={Boolean(editTarget) && !canEditUsers}
               />
             </div>
-            {editTarget?.id === viewer.id ? null : (
+            {canChangeRoles && editTarget?.id !== viewer.id ? (
               <div className="space-y-1.5">
                 <Label htmlFor="tu-role">Role</Label>
                 <select
@@ -490,6 +529,34 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
                 >
                   <option value="ADMIN">ADMIN</option>
                   <option value="EDITOR">EDITOR</option>
+                </select>
+              </div>
+            ) : !editTarget && canChangeRoles ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="tu-role">Role</Label>
+                <select
+                  id="tu-role"
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as SubTenantRole)}
+                >
+                  <option value="ADMIN">ADMIN</option>
+                  <option value="EDITOR">EDITOR</option>
+                </select>
+              </div>
+            ) : null}
+            {editTarget?.id === viewer.id || !canSuspendUsers ||
+            editTarget?.status === "PENDING" ? null : (
+              <div className="space-y-1.5">
+                <Label htmlFor="tu-status">Tenant access</Label>
+                <select
+                  id="tu-status"
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                  value={accountStatus}
+                  onChange={(e) => setAccountStatus(e.target.value as "ACTIVE" | "INACTIVE")}
+                >
+                  <option value="ACTIVE">Unsuspend</option>
+                  <option value="INACTIVE">Suspend</option>
                 </select>
               </div>
             )}
@@ -618,11 +685,12 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Remove tenant user?</DialogTitle>
+            <DialogTitle>Delete tenant user?</DialogTitle>
             <DialogDescription>
-              This removes this user’s access to the current tenant and revokes
-              their tenant sessions. Their account is preserved if they still
-              have access to another tenant.
+              Suspend this user first. Once suspended, deleting permanently
+              removes their access to the current tenant and revokes their tenant
+              sessions. Their account is preserved if they still have access to
+              another tenant.
             </DialogDescription>
           </DialogHeader>
           {deleteTarget ? (
@@ -653,7 +721,7 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
               disabled={deleting}
               onClick={handleDelete}
             >
-              {deleting ? "Removing…" : "Remove user"}
+              {deleting ? "Deleting…" : "Delete user"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useQuery } from "@apollo/client/react";
 import { usePathname } from "next/navigation";
 import {
   Activity,
@@ -8,6 +9,7 @@ import {
   ImageIcon,
   LayoutDashboard,
   Settings,
+  ShieldCheck,
   Users,
 } from "lucide-react";
 import {
@@ -24,6 +26,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import type { AuthUser } from "@/lib/types";
+import { TENANT_USER_PERMISSIONS_QUERY } from "@/lib/apollo/operations";
 
 type NavItem = {
   title: string;
@@ -34,6 +37,7 @@ type NavItem = {
 const adminNav: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { title: "Users", href: "/users", icon: Users },
+  { title: "Roles & Permissions", href: "/roles", icon: ShieldCheck },
   { title: "Content", href: "/content", icon: FileText },
   { title: "Media", href: "/media", icon: ImageIcon },
   { title: "Settings", href: "/settings", icon: Settings },
@@ -42,21 +46,42 @@ const adminNav: NavItem[] = [
 
 const editorNav: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { title: "Users", href: "/users", icon: Users },
+  { title: "Roles & Permissions", href: "/roles", icon: ShieldCheck },
   { title: "Content", href: "/content", icon: FileText },
   { title: "Media", href: "/media", icon: ImageIcon },
   { title: "Audit Logs", href: "/audit", icon: Activity },
 ];
 
+function tenantInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase() || "CC";
+}
+
 export function AppSidebar({ user }: { user: AuthUser }) {
   const pathname = usePathname();
-  const items = user.role === "EDITOR" ? editorNav : adminNav;
+  const { data } = useQuery(TENANT_USER_PERMISSIONS_QUERY, {
+    fetchPolicy: "cache-first",
+  });
+  const canViewUsers = data?.tenantUserPermissions?.includes("USERS_VIEW") ?? false;
+  const items = (user.role === "EDITOR" ? editorNav : adminNav).filter(
+    (item) => item.href !== "/users" || canViewUsers,
+  );
 
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="flex h-14 flex-row items-center gap-3 border-b border-sidebar-border p-0 px-3">
         <div className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sm font-bold text-sidebar-primary-foreground">
-          CC
+          {tenantInitials(user.tenant.name)}
         </div>
+        <p className="min-w-0 truncate text-sm font-semibold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
+          {user.tenant.name}
+        </p>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>

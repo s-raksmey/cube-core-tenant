@@ -3,6 +3,8 @@ export {
   MeDocument as ME_QUERY,
   TenantDashboardDocument as TENANT_DASHBOARD_QUERY,
   TenantUsersDocument as TENANT_USERS_QUERY,
+  TenantUserPermissionsDocument as TENANT_USER_PERMISSIONS_QUERY,
+  TenantRolePermissionSummaryDocument as TENANT_ROLE_PERMISSION_SUMMARY_QUERY,
   CreateTenantUserDocument as CREATE_TENANT_USER,
   DeleteTenantUserDocument as DELETE_TENANT_USER,
   UpdateTenantUserDocument as UPDATE_TENANT_USER,

@@ -2,7 +2,8 @@
 
 import { useQuery } from "@apollo/client/react";
 import { ME_QUERY } from "@/lib/apollo/operations";
-import { TenantDashboard } from "@/components/dashboard/tenant-dashboard";
+import { AdminDashboard } from "@/components/dashboard/admin-dashboard";
+import { EditorDashboard } from "@/components/dashboard/editor-dashboard";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -34,5 +35,5 @@ export default function DashboardPage() {
     );
   }
 
-  return <TenantDashboard user={user} />;
+  return user.role === "ADMIN" ? <AdminDashboard user={user} /> : <EditorDashboard user={user} />;
 }

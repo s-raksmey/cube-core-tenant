@@ -10,7 +10,7 @@ export function createApolloClient() {
     }),
     cache: new InMemoryCache(),
     defaultOptions: {
-      watchQuery: { fetchPolicy: "cache-and-network" },
+      watchQuery: { fetchPolicy: "cache-first" },
     },
   });
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { LogOut } from "lucide-react";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,10 @@ export function ConsoleShell({
   user: AuthUser;
   children: React.ReactNode;
 }) {
+  useEffect(() => {
+    document.title = user.tenant.name;
+  }, [user.tenant.name]);
+
   async function handleLogout() {
     await fetch("/auth/logout", { method: "POST" });
     // Hard navigation clears any in-memory 2FA/login step state.
