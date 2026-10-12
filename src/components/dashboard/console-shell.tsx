@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { LogOut } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -19,9 +20,11 @@ export function ConsoleShell({
   user: AuthUser;
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+
   useEffect(() => {
     document.title = user.tenant.name;
-  }, [user.tenant.name]);
+  }, [pathname, user.tenant.name]);
 
   async function handleLogout() {
     await fetch("/auth/logout", { method: "POST" });

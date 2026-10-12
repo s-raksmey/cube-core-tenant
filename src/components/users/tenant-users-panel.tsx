@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client/react";
-import { Copy, KeyRound, Link2, Pencil, Plus, RotateCcw, Search, Trash2 } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import {
   CREATE_TENANT_USER,
   DELETE_TENANT_USER,
@@ -14,40 +14,16 @@ import {
   TENANT_USERS_QUERY,
 } from "@/lib/apollo/operations";
 import type { AuthUser, SubTenantRole } from "@/lib/types";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { EmptyState } from "@/components/dashboard/empty-state";
-
-function formatDate(value?: string | null) {
-  if (!value) return "—";
-  return new Date(value).toLocaleDateString();
-}
-
-type TenantUserLinkTarget = {
-  id: string;
-  email: string;
-  username: string | null;
-  firstName: string | null;
-  lastName: string | null;
-};
+import { TenantUsersTable, type TenantUserRow } from "@/components/users/tenant-users-table";
+import {
+  TenantUserDialogs,
+  type TenantUserDeleteTarget,
+  type TenantUserEditTarget,
+  type TenantUserLinkTarget,
+} from "@/components/users/tenant-user-dialogs";
 
 export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
   const [searchInput, setSearchInput] = useState("");
@@ -68,7 +44,6 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
   const canResetPasswords = tenantPermissions.has("USERS_RESET_PASSWORD");
   const canSuspendUsers = tenantPermissions.has("USERS_SUSPEND");
   const canDeleteUsers = tenantPermissions.has("USERS_DELETE");
-  const hasAnyUserAction = canEditUsers || canChangeRoles || canActivateUsers || canSuspendUsers || canResetPasswords || canDeleteUsers;
 
   const { data, loading, error, refetch } = useQuery(TENANT_USERS_QUERY, {
     variables: { search: search || null, page, pageSize },
@@ -86,21 +61,8 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
     { fetchPolicy: "no-cache" },
   );
   const [createOpen, setCreateOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<{
-    id: string;
-    firstName: string | null;
-    lastName: string | null;
-    email: string;
-    role: SubTenantRole;
-    status: string | null;
-    membershipStatus: string | null;
-  } | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<{
-    id: string;
-    username: string | null;
-    email: string;
-    role: string;
-  } | null>(null);
+  const [editTarget, setEditTarget] = useState<TenantUserEditTarget | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<TenantUserDeleteTarget | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -333,400 +295,100 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
       ) : null}
 
       {canViewUsers && users.length > 0 ? (
-        <div className="rounded-xl border border-border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Username</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>2FA</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Last login</TableHead>
-                {hasAnyUserAction ? (
-                  <TableHead className="text-right">Actions</TableHead>
-                ) : null}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">
-                    {user.fullName ||
-                      `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim()}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {user.username ?? "—"}
-                  </TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{user.role}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        user.membershipStatus === "DISABLED"
-                          ? "destructive"
-                          : user.status === "ACTIVE"
-                          ? "default"
-                          : user.status === "PENDING"
-                            ? "secondary"
-                            : "destructive"
-                      }
-                    >
-                      {user.membershipStatus === "DISABLED" ? "SUSPENDED" : user.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{user.totpEnabled ? "On" : "Off"}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatDate(user.createdAt)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatDate(user.lastLoginAt)}
-                  </TableCell>
-                  {hasAnyUserAction ? (
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        {canEditUsers || canChangeRoles || canSuspendUsers ? <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`Edit ${user.username || user.email}`}
-                          title="Edit user"
-                          onClick={() => {
-                            setEditTarget({
-                              id: user.id,
-                              firstName: user.firstName,
-                              lastName: user.lastName,
-                              email: user.email,
-                              role: user.role as SubTenantRole,
-                              status: user.status,
-                              membershipStatus: user.membershipStatus,
-                            });
-                            setFirstName(user.firstName ?? "");
-                            setLastName(user.lastName ?? "");
-                            setEmail(user.email);
-                            setRole(user.role as SubTenantRole);
-                            setAccountStatus(user.membershipStatus === "DISABLED" ? "INACTIVE" : "ACTIVE");
-                            setFormError(null);
-                            setCreateOpen(true);
-                          }}
-                        >
-                          <Pencil className="size-4" />
-                        </Button> : null}
-                        {user.id !== viewer.id ? (
-                          <>
-                        {canActivateUsers && (user.status === "PENDING" || user.status === "ACTIVE") ? (
-                        <Button type="button" variant="ghost" size="icon" aria-label={`${user.status === "ACTIVE" ? "Reactivate" : "View activation link for"} ${user.username || user.email}`} title={user.status === "ACTIVE" ? "Reactivate account and reset 2FA" : "View activation link"} disabled={loadingActivationLink || regenerating} onClick={() => void viewActivationLink(user)}>
-                          {user.status === "ACTIVE" ? <RotateCcw className="size-4" /> : <Link2 className="size-4" />}
-                        </Button>
-                        ) : null}
-                        {canResetPasswords ? <Button type="button" variant="ghost" size="icon" aria-label={`Reset password for ${user.username || user.email}`} title="Reset password" disabled={user.status !== "ACTIVE" && user.status !== "LOCKED"} onClick={() => void showPasswordResetLink(user)}>
-                          <KeyRound className="size-4" />
-                        </Button> : null}
-                        {canDeleteUsers ? <Button type="button" variant="ghost" size="icon" aria-label={`Delete ${user.username || user.email}`} title="Delete tenant user" onClick={() => { setDeleteError(null); setDeleteTarget({ id: user.id, username: user.username, email: user.email, role: user.role }); }}>
-                          <Trash2 className="size-4 text-destructive" />
-                        </Button> : null}
-                          </>
-                      ) : null}
-                      </div>
-                    </TableCell>
-                  ) : null}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <div className="flex items-center justify-between border-t border-border px-4 py-3 text-sm text-muted-foreground">
-            <span>
-              Page {page} of {totalPages} · {total} user
-              {total === 1 ? "" : "s"}
-            </span>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                Previous
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        </div>
+        <TenantUsersTable
+          users={users as TenantUserRow[]}
+          viewerId={viewer.id}
+          actions={{
+            canEditUsers,
+            canChangeRoles,
+            canActivateUsers,
+            canSuspendUsers,
+            canResetPasswords,
+            canDeleteUsers,
+          }}
+          loadingActivationLink={loadingActivationLink}
+          regenerating={regenerating}
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          onPageChange={setPage}
+          onEdit={(user) => {
+            setEditTarget({
+              id: user.id,
+              firstName: user.firstName ?? null,
+              lastName: user.lastName ?? null,
+              email: user.email,
+              role: user.role as SubTenantRole,
+              status: user.status,
+              membershipStatus: user.membershipStatus,
+            });
+            setFirstName(user.firstName ?? "");
+            setLastName(user.lastName ?? "");
+            setEmail(user.email);
+            setRole(user.role as SubTenantRole);
+            setAccountStatus(user.membershipStatus === "DISABLED" ? "INACTIVE" : "ACTIVE");
+            setFormError(null);
+            setCreateOpen(true);
+          }}
+          onActivation={(user) => void viewActivationLink(user)}
+          onResetPassword={(user) => void showPasswordResetLink(user)}
+          onDelete={(user) => {
+            setDeleteError(null);
+            setDeleteTarget({
+              id: user.id,
+              username: user.username,
+              email: user.email,
+              role: user.role,
+            });
+          }}
+        />
       ) : null}
 
-      <Dialog
-        open={createOpen}
-        onOpenChange={(open) => {
-          setCreateOpen(open);
-          if (!open) {
-            setEditTarget(null);
-            setFormError(null);
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editTarget ? "Edit User" : "Create User"}</DialogTitle>
-            <DialogDescription>
-              {editTarget
-                ? editTarget.id === viewer.id
-                  ? "Update your profile. Your role and account status cannot be changed here."
-                  : "Update this tenant user's profile."
-                : "Creates a PENDING tenant account. They activate with username, password, 2FA, and recovery codes."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="tu-first">First name</Label>
-                <Input
-                  id="tu-first"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  disabled={Boolean(editTarget) && !canEditUsers}
-                  autoFocus
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="tu-last">Last name</Label>
-                <Input
-                  id="tu-last"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  disabled={Boolean(editTarget) && !canEditUsers}
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="tu-email">Email</Label>
-              <Input
-                id="tu-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={Boolean(editTarget) && !canEditUsers}
-              />
-            </div>
-            {canChangeRoles && editTarget?.id !== viewer.id ? (
-              <div className="space-y-1.5">
-                <Label htmlFor="tu-role">Role</Label>
-                <select
-                  id="tu-role"
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as SubTenantRole)}
-                >
-                  <option value="ADMIN">ADMIN</option>
-                  <option value="EDITOR">EDITOR</option>
-                </select>
-              </div>
-            ) : !editTarget && canChangeRoles ? (
-              <div className="space-y-1.5">
-                <Label htmlFor="tu-role">Role</Label>
-                <select
-                  id="tu-role"
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as SubTenantRole)}
-                >
-                  <option value="ADMIN">ADMIN</option>
-                  <option value="EDITOR">EDITOR</option>
-                </select>
-              </div>
-            ) : null}
-            {editTarget?.id === viewer.id || !canSuspendUsers ||
-            editTarget?.status === "PENDING" ? null : (
-              <div className="space-y-1.5">
-                <Label htmlFor="tu-status">Tenant access</Label>
-                <select
-                  id="tu-status"
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-                  value={accountStatus}
-                  onChange={(e) => setAccountStatus(e.target.value as "ACTIVE" | "INACTIVE")}
-                >
-                  <option value="ACTIVE">Unsuspend</option>
-                  <option value="INACTIVE">Suspend</option>
-                </select>
-              </div>
-            )}
-            {formError ? (
-              <p className="text-sm text-destructive">{formError}</p>
-            ) : null}
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setCreateOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={handleCreate}
-              disabled={
-                creating ||
-                updating ||
-                !firstName.trim() ||
-                !lastName.trim() ||
-                !email.trim()
-              }
-            >
-              {creating || updating ? "Saving…" : editTarget ? "Save changes" : "Create User"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <TenantUserDialogs
+        viewerId={viewer.id}
+        createOpen={createOpen}
+        setCreateOpen={setCreateOpen}
+        editTarget={editTarget}
+        setEditTarget={setEditTarget}
+        deleteTarget={deleteTarget}
+        setDeleteTarget={setDeleteTarget}
+        activationTarget={activationTarget}
+        setActivationTarget={setActivationTarget}
+        activationLinkUser={activationLinkUser}
+        setActivationLinkUser={setActivationLinkUser}
+        linkResult={linkResult}
+        setLinkResult={setLinkResult}
+        firstName={firstName}
+        setFirstName={setFirstName}
+        lastName={lastName}
+        setLastName={setLastName}
+        email={email}
+        setEmail={setEmail}
+        role={role}
+        setRole={setRole}
+        accountStatus={accountStatus}
+        setAccountStatus={setAccountStatus}
+        canEditUsers={canEditUsers}
+        canChangeRoles={canChangeRoles}
+        canSuspendUsers={canSuspendUsers}
+        formError={formError}
+        setFormError={setFormError}
+        deleteError={deleteError}
+        setDeleteError={setDeleteError}
+        creating={creating}
+        updating={updating}
+        deleting={deleting}
+        regenerating={regenerating}
+        loadingActivationLink={loadingActivationLink}
+        activationLinkUnavailable={activationLinkUnavailable}
+        activationLookupFailed={activationLookupFailed}
+        onSave={handleCreate}
+        onDelete={handleDelete}
+        onRegenerateActivation={confirmActivationLink}
+        onRetryActivationLookup={retryActivationLookup}
+        onRequestActivationRegeneration={requestActivationRegeneration}
+      />
 
-      <Dialog
-        open={activationTarget !== null}
-        onOpenChange={(open) => {
-          if (!open && !regenerating) {
-            setActivationTarget(null);
-            setFormError(null);
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {activationLookupFailed
-                ? "Could not retrieve the activation link"
-                : activationLinkUnavailable
-                  ? "No existing link is available"
-                  : "Regenerate activation link?"}
-            </DialogTitle>
-            <DialogDescription>
-              {activationLookupFailed
-                ? "The existing link was not changed. Retry to view it, or regenerate a replacement link."
-                : activationLinkUnavailable
-                  ? "The existing link has expired, was used, or cannot be recovered. Generate a new single-use activation link for this pending user."
-                  : "The existing activation link will be revoked. Only the new single-use link will work."}
-            </DialogDescription>
-          </DialogHeader>
-          {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={regenerating}
-              onClick={() => {
-                setActivationTarget(null);
-                setFormError(null);
-              }}
-            >
-              Cancel
-            </Button>
-            {activationLookupFailed ? (
-              <Button type="button" variant="outline" disabled={loadingActivationLink || regenerating} onClick={retryActivationLookup}>
-                Retry
-              </Button>
-            ) : null}
-            <Button type="button" disabled={regenerating} onClick={() => void confirmActivationLink()}>
-              {regenerating ? "Regenerating…" : "Regenerate link"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={linkResult !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setLinkResult(null);
-            setActivationLinkUser(null);
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{linkResult?.label ?? "Secure link"}</DialogTitle>
-            <DialogDescription>
-              Expires {linkResult?.expiresAt ? new Date(linkResult.expiresAt).toLocaleString() : "—"}. Copy and deliver through an approved channel. The link is single-use.
-            </DialogDescription>
-          </DialogHeader>
-          <p className="break-all rounded-md bg-muted p-3 text-sm">{linkResult?.url}</p>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setLinkResult(null)}>
-              Close
-            </Button>
-            <Button type="button" onClick={() => linkResult ? void navigator.clipboard.writeText(linkResult.url) : undefined}>
-              <Copy className="size-4" />
-              Copy link
-            </Button>
-            {activationLinkUser ? (
-              <Button type="button" variant="outline" onClick={requestActivationRegeneration}>
-                Regenerate link
-              </Button>
-            ) : null}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={deleteTarget !== null}
-        onOpenChange={(open) => {
-          if (!open && !deleting) {
-            setDeleteTarget(null);
-            setDeleteError(null);
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete tenant user?</DialogTitle>
-            <DialogDescription>
-              Suspend this user first. Once suspended, deleting permanently
-              permanently removes their account, credentials, and sessions from
-              the database.
-            </DialogDescription>
-          </DialogHeader>
-          {deleteTarget ? (
-            <div className="rounded-md border p-3 text-sm">
-              <p className="font-medium">
-                {deleteTarget.username || deleteTarget.email}
-              </p>
-              <p className="text-muted-foreground">
-                {deleteTarget.email} · {deleteTarget.role}
-              </p>
-            </div>
-          ) : null}
-          {deleteError ? (
-            <p className="text-sm text-destructive">{deleteError}</p>
-          ) : null}
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={deleting}
-              onClick={() => setDeleteTarget(null)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={deleting}
-              onClick={handleDelete}
-            >
-              {deleting ? "Deleting…" : "Delete user"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
