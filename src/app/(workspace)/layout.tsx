@@ -7,9 +7,6 @@ import {
   resolveTenantByHostname,
 } from "@/lib/tenant-hostname";
 
-// The authenticated workspace depends on the request hostname and session.
-export const instant = false;
-
 export async function generateMetadata(): Promise<Metadata> {
   const host = managementHostFromHeader((await headers()).get("host"));
 
