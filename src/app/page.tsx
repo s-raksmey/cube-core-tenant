@@ -1,5 +1,9 @@
-import { redirect } from "next/navigation";
+import { TenantAuthPage, tenantAuthMetadata } from "@/components/auth/tenant-auth-page";
 
-export default function HomePage() {
-  redirect("/dashboard");
+// Tenant identity is resolved from the current host at request time.
+export const instant = false;
+export const generateMetadata = tenantAuthMetadata;
+
+export default function TenantLandingPage() {
+  return <TenantAuthPage />;
 }

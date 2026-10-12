@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
+import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import {
   Activity,
   FileText,
@@ -28,6 +31,39 @@ import { Badge } from "@/components/ui/badge";
 import type { AuthUser } from "@/lib/types";
 import { TENANT_USER_PERMISSIONS_QUERY } from "@/lib/apollo/operations";
 
+const MY_BRANDING = gql`query SidebarBranding { myTenantBranding { managementLogoUrl faviconUrl } }`;
+const storageBase = process.env.NEXT_PUBLIC_GRAPHQL_SERVER_URL?.replace(/\/graphql$/, "") ?? "http://localhost:4000";
+
+function tenantAssetPath(path: string) {
+  return `/tenant-assets/${path.replace(/^\/storage\//, "")}`;
+}
+
+function faviconMimeType(path: string) {
+  const extension = path.split(".").pop()?.toLowerCase();
+  return (
+    {
+      ico: "image/x-icon",
+      png: "image/png",
+      svg: "image/svg+xml",
+      webp: "image/webp",
+    }[extension ?? ""] ?? "image/x-icon"
+  );
+}
+
+function applyTenantFavicon(path: string | null | undefined) {
+  // Only replace the link owned by this component. Next.js manages its own
+  // head nodes and removing those can race with route transitions.
+  document.querySelector<HTMLLinkElement>("link[data-tenant-favicon]")?.remove();
+  if (!path) return;
+
+  const link = document.createElement("link");
+  link.dataset.tenantFavicon = "true";
+  link.rel = "icon";
+  link.type = faviconMimeType(path);
+  link.href = `${tenantAssetPath(path)}?v=${Date.now()}`;
+  document.head.appendChild(link);
+}
+
 type NavItem = {
   title: string;
   href: string;
@@ -50,6 +86,7 @@ const editorNav: NavItem[] = [
   { title: "Roles & Permissions", href: "/roles", icon: ShieldCheck },
   { title: "Content", href: "/content", icon: FileText },
   { title: "Media", href: "/media", icon: ImageIcon },
+  { title: "Settings", href: "/settings", icon: Settings },
   { title: "Audit Logs", href: "/audit", icon: Activity },
 ];
 
@@ -69,19 +106,34 @@ export function AppSidebar({ user }: { user: AuthUser }) {
     fetchPolicy: "cache-first",
   });
   const canViewUsers = data?.tenantUserPermissions?.includes("USERS_VIEW") ?? false;
+  const canViewSettings = data?.tenantUserPermissions?.includes("BRANDING_VIEW") ?? false;
+  const { data: brandingData, refetch: refetchBranding } = useQuery<{ myTenantBranding: { managementLogoUrl: string | null; faviconUrl: string | null } }>(MY_BRANDING, { fetchPolicy: "cache-and-network" });
+  const managementLogoUrl = brandingData?.myTenantBranding.managementLogoUrl;
+  const faviconUrl = brandingData?.myTenantBranding.faviconUrl;
+  useEffect(() => {
+    applyTenantFavicon(faviconUrl);
+  }, [faviconUrl, pathname]);
+  useEffect(() => {
+    const refreshBranding = (event: Event) => {
+      const favicon = (event as CustomEvent<{ faviconUrl?: string | null }>).detail?.faviconUrl;
+      if (favicon !== undefined) applyTenantFavicon(favicon);
+      void refetchBranding();
+    };
+    window.addEventListener("tenant-branding-updated", refreshBranding);
+    return () => window.removeEventListener("tenant-branding-updated", refreshBranding);
+  }, [refetchBranding]);
   const items = (user.role === "EDITOR" ? editorNav : adminNav).filter(
-    (item) => item.href !== "/users" || canViewUsers,
+    (item) =>
+      (item.href !== "/users" || canViewUsers) &&
+      (item.href !== "/settings" || canViewSettings),
   );
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="flex h-14 flex-row items-center gap-3 border-b border-sidebar-border p-0 px-3">
-        <div className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sm font-bold text-sidebar-primary-foreground">
-          {tenantInitials(user.tenant.name)}
+      <SidebarHeader className="flex h-14 flex-row items-center border-b border-sidebar-border p-0 px-3 group-data-[collapsible=icon]:px-1.5">
+        <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-sidebar-primary text-sm font-bold text-sidebar-primary-foreground">
+          {managementLogoUrl ? <Image src={`${storageBase}${managementLogoUrl}`} alt={`${user.tenant.name} logo`} width={32} height={32} unoptimized className="size-8 object-contain" /> : tenantInitials(user.tenant.name)}
         </div>
-        <p className="min-w-0 truncate text-sm font-semibold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
-          {user.tenant.name}
-        </p>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>

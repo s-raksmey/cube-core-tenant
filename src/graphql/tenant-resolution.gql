@@ -3,6 +3,8 @@ query LocalDevelopmentTenant {
     id
     name
     slug
+    managementLogoUrl
+    faviconUrl
   }
 }
 
@@ -12,5 +14,7 @@ query TenantByHostname($hostname: String!, $purpose: TenantDomainPurpose!) {
     name
     type
     status
+    managementLogoUrl
+    faviconUrl
   }
 }

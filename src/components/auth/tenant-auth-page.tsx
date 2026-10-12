@@ -1,0 +1,72 @@
+import { cache } from "react";
+import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { connection } from "next/server";
+import { TenantAuthFlow } from "@/components/auth/tenant-auth-flow";
+import { TenantUnavailable } from "@/components/auth/tenant-unavailable";
+import {
+  managementHostFromHeader,
+  resolveTenantByHostname,
+  resolveLocalDevelopmentTenant,
+  type ManagementHostResolution,
+} from "@/lib/tenant-hostname";
+
+const lookupLocalDevelopmentTenant = cache(async () => {
+  try {
+    return await resolveLocalDevelopmentTenant();
+  } catch {
+    return null;
+  }
+});
+
+const lookupTenantByHostname = cache(async (hostname: string) => {
+  try {
+    const tenant = await resolveTenantByHostname(hostname);
+    return tenant?.type === "SUB" && tenant.status === "ACTIVE" ? tenant : null;
+  } catch {
+    return null;
+  }
+});
+
+async function resolveTenant(host: ManagementHostResolution) {
+  if (host.kind === "domain") return lookupTenantByHostname(host.hostname);
+  if (host.kind === "local" && process.env.NODE_ENV !== "production") {
+    return lookupLocalDevelopmentTenant();
+  }
+  return null;
+}
+
+export async function tenantAuthMetadata(): Promise<Metadata> {
+  await connection();
+  const host = managementHostFromHeader((await headers()).get("host"));
+  const tenant = await resolveTenant(host);
+  return {
+    title: tenant?.name ?? "Tenant unavailable",
+    ...(tenant?.faviconUrl
+      ? {
+          icons: {
+            icon: `/tenant-assets/${tenant.faviconUrl.replace(/^\/storage\//, "")}`,
+          },
+        }
+      : {}),
+  };
+}
+
+async function TenantAuthForRequest({ showLogin }: { showLogin: boolean }) {
+  const host = managementHostFromHeader((await headers()).get("host"));
+  const tenant = await resolveTenant(host);
+  if (!tenant) return <TenantUnavailable />;
+
+  return (
+    <TenantAuthFlow
+      key={showLogin ? "login" : "landing"}
+      tenantName={tenant.name}
+      managementLogoUrl={tenant.managementLogoUrl}
+      initialStep={showLogin ? "password" : "landing"}
+    />
+  );
+}
+
+export function TenantAuthPage({ showLogin = false }: { showLogin?: boolean }) {
+  return <TenantAuthForRequest showLogin={showLogin} />;
+}

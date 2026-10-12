@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, type CSSProperties } from "react";
 import { LogOut } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
@@ -33,7 +33,7 @@ export function ConsoleShell({
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider style={{ "--sidebar-width-icon": "2.75rem" } as CSSProperties}>
       <AppSidebar user={user} />
       <SidebarInset>
         <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-card/90 px-4 backdrop-blur">

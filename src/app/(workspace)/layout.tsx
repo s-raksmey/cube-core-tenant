@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { connection } from "next/server";
 import { ConsoleGate } from "@/components/dashboard/console-gate";
 import {
   managementHostFromHeader,
@@ -7,7 +8,14 @@ import {
   resolveTenantByHostname,
 } from "@/lib/tenant-hostname";
 
+function tenantMetadata(name: string): Metadata {
+  return { title: name };
+}
+
 export async function generateMetadata(): Promise<Metadata> {
+  // Tenant resolution reads the current access token, whose expiry is evaluated
+  // with the current time. Metadata must therefore be request-time rendered.
+  await connection();
   const host = managementHostFromHeader((await headers()).get("host"));
 
   try {
@@ -18,9 +26,11 @@ export async function generateMetadata(): Promise<Metadata> {
           ? await resolveLocalDevelopmentTenant()
           : null;
 
-    if (host.kind === "local" && tenant) return { title: tenant.name };
+    if (host.kind === "local" && tenant) {
+      return tenantMetadata(tenant.name);
+    }
     if (tenant && "type" in tenant && tenant.type === "SUB" && tenant.status === "ACTIVE") {
-      return { title: tenant.name };
+      return tenantMetadata(tenant.name);
     }
   } catch {
     // The console gate renders the unavailable or sign-in state.

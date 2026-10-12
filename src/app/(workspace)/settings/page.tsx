@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { EmptyState } from "@/components/dashboard/empty-state";
+import { TenantBrandingPanel } from "@/components/branding/tenant-branding-panel";
 import { DynamicRouteMarker } from "@/components/workspace/dynamic-route-marker";
 
 export default function SettingsPage() {
@@ -8,11 +8,8 @@ export default function SettingsPage() {
     <>
       <Suspense fallback={null}><DynamicRouteMarker /></Suspense>
       <div>
-        <PageHeader title="Settings" description="Tenant settings placeholder for this MVP." />
-        <EmptyState
-          title="Settings coming next"
-          description="Role-aware tenant settings will land in a later phase."
-        />
+        <PageHeader title="Branding & SEO" description="Manage the visual identity and social sharing assets for this tenant." />
+        <TenantBrandingPanel />
       </div>
     </>
   );
