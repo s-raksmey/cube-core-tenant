@@ -31,7 +31,7 @@ function initials(name: string) {
 export function TenantLandingHero({ user }: { user: AuthUser }) {
   const { data } = useQuery<{
     myTenantBranding: { managementLogoUrl: string | null };
-  }>(MY_MANAGEMENT_BRANDING, { fetchPolicy: "cache-and-network" });
+  }>(MY_MANAGEMENT_BRANDING);
   const logo = data?.myTenantBranding.managementLogoUrl;
   const roleLabel = user.role === "ADMIN" ? "Tenant administration" : "Editor workspace";
 

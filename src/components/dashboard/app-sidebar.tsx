@@ -51,17 +51,25 @@ function faviconMimeType(path: string) {
 }
 
 function applyTenantFavicon(path: string | null | undefined) {
-  // Only replace the link owned by this component. Next.js manages its own
-  // head nodes and removing those can race with route transitions.
-  document.querySelector<HTMLLinkElement>("link[data-tenant-favicon]")?.remove();
-  if (!path) return;
+  const existing = document.querySelector<HTMLLinkElement>(
+    "link[data-tenant-favicon]",
+  );
 
-  const link = document.createElement("link");
+  if (!path) {
+    existing?.remove();
+    return;
+  }
+
+  const link = existing ?? document.createElement("link");
   link.dataset.tenantFavicon = "true";
   link.rel = "icon";
   link.type = faviconMimeType(path);
-  link.href = `${tenantAssetPath(path)}?v=${Date.now()}`;
-  document.head.appendChild(link);
+  // Every uploaded asset has its own path, which provides a stable cache key.
+  link.href = tenantAssetPath(path);
+
+  if (!existing) {
+    document.head.appendChild(link);
+  }
 }
 
 type NavItem = {
@@ -102,21 +110,22 @@ function tenantInitials(name: string) {
 
 export function AppSidebar({ user }: { user: AuthUser }) {
   const pathname = usePathname();
-  const { data } = useQuery(TENANT_USER_PERMISSIONS_QUERY, {
-    fetchPolicy: "cache-first",
-  });
+  const { data } = useQuery(TENANT_USER_PERMISSIONS_QUERY);
   const canViewUsers = data?.tenantUserPermissions?.includes("USERS_VIEW") ?? false;
   const canViewSettings = data?.tenantUserPermissions?.includes("BRANDING_VIEW") ?? false;
-  const { data: brandingData, refetch: refetchBranding } = useQuery<{ myTenantBranding: { managementLogoUrl: string | null; faviconUrl: string | null } }>(MY_BRANDING, { fetchPolicy: "cache-and-network" });
+  const { data: brandingData, refetch: refetchBranding } = useQuery<{
+    myTenantBranding: {
+      managementLogoUrl: string | null;
+      faviconUrl: string | null;
+    };
+  }>(MY_BRANDING);
   const managementLogoUrl = brandingData?.myTenantBranding.managementLogoUrl;
   const faviconUrl = brandingData?.myTenantBranding.faviconUrl;
   useEffect(() => {
     applyTenantFavicon(faviconUrl);
-  }, [faviconUrl, pathname]);
+  }, [faviconUrl]);
   useEffect(() => {
-    const refreshBranding = (event: Event) => {
-      const favicon = (event as CustomEvent<{ faviconUrl?: string | null }>).detail?.faviconUrl;
-      if (favicon !== undefined) applyTenantFavicon(favicon);
+    const refreshBranding = () => {
       void refetchBranding();
     };
     window.addEventListener("tenant-branding-updated", refreshBranding);

@@ -1,42 +1,17 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
+import { Suspense, type ReactNode } from "react";
 import { connection } from "next/server";
 import { ConsoleGate } from "@/components/dashboard/console-gate";
-import {
-  managementHostFromHeader,
-  resolveLocalDevelopmentTenant,
-  resolveTenantByHostname,
-} from "@/lib/tenant-hostname";
 
-function tenantMetadata(name: string): Metadata {
-  return { title: name };
-}
+// ConsoleShell sets the authenticated tenant name after the session check.
+// Keeping workspace metadata static avoids a second tenant lookup on every route.
+export const metadata: Metadata = { title: "Tenant workspace" };
 
-export async function generateMetadata(): Promise<Metadata> {
-  // Tenant resolution reads the current access token, whose expiry is evaluated
-  // with the current time. Metadata must therefore be request-time rendered.
+async function WorkspaceRoute({ children }: { children: ReactNode }) {
+  // ConsoleGate validates the session in the client. Keeping this wrapper
+  // request-rendered prevents child workspace routes from being dropped.
   await connection();
-  const host = managementHostFromHeader((await headers()).get("host"));
-
-  try {
-    const tenant =
-      host.kind === "domain"
-        ? await resolveTenantByHostname(host.hostname)
-        : host.kind === "local" && process.env.NODE_ENV !== "production"
-          ? await resolveLocalDevelopmentTenant()
-          : null;
-
-    if (host.kind === "local" && tenant) {
-      return tenantMetadata(tenant.name);
-    }
-    if (tenant && "type" in tenant && tenant.type === "SUB" && tenant.status === "ACTIVE") {
-      return tenantMetadata(tenant.name);
-    }
-  } catch {
-    // The console gate renders the unavailable or sign-in state.
-  }
-
-  return { title: "Tenant unavailable" };
+  return <ConsoleGate>{children}</ConsoleGate>;
 }
 
 export default function WorkspaceLayout({
@@ -44,5 +19,9 @@ export default function WorkspaceLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <ConsoleGate>{children}</ConsoleGate>;
+  return (
+    <Suspense fallback={null}>
+      <WorkspaceRoute>{children}</WorkspaceRoute>
+    </Suspense>
+  );
 }

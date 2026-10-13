@@ -4,7 +4,12 @@ import { useQuery } from "@apollo/client/react";
 import { TENANT_DASHBOARD_QUERY } from "@/lib/apollo/operations";
 
 export function useTenantDashboardData() {
-  return useQuery(TENANT_DASHBOARD_QUERY, { fetchPolicy: "cache-first" });
+  const query = useQuery(TENANT_DASHBOARD_QUERY);
+
+  return {
+    ...query,
+    initialLoading: query.loading && !query.data?.tenantDashboard,
+  };
 }
 
 export function formatBytes(bytes: number) {

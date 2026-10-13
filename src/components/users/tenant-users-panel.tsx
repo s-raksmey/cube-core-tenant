@@ -28,11 +28,10 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  const { loading: loadingPermissions, error: permissionsError, canViewUsers, canCreateUsers, canEditUsers, canChangeRoles, canActivateUsers, canResetPasswords, canSuspendUsers, canDeleteUsers } = useTenantUserPermissions("cache-and-network");
+  const { loading: loadingPermissions, error: permissionsError, canViewUsers, canCreateUsers, canEditUsers, canChangeRoles, canActivateUsers, canResetPasswords, canSuspendUsers, canDeleteUsers } = useTenantUserPermissions();
 
   const { data, loading, error, refetch } = useQuery(TENANT_USERS_QUERY, {
     variables: { search: search || null, page, pageSize },
-    fetchPolicy: "cache-first",
     skip: !canViewUsers,
   });
 
@@ -51,6 +50,9 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
   const users = pageData?.items ?? [];
   const total = pageData?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const initialLoading = loading && !pageData;
+  const blockingError = error && !pageData;
+  const refreshError = error && !!pageData;
 
   const emptyDescription = useMemo(
     () =>
@@ -211,13 +213,18 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
       {!loadingPermissions && !permissionsError && !canViewUsers ? (
         <EmptyState title="User Management unavailable" description="Your role does not have permission to view users." />
       ) : null}
-      {canViewUsers && loading && !pageData ? (
+      {canViewUsers && initialLoading ? (
         <p className="text-sm text-muted-foreground">Loading users…</p>
       ) : null}
-      {canViewUsers && error ? (
+      {canViewUsers && blockingError ? (
         <p className="text-sm text-destructive">Unable to load users.</p>
       ) : null}
-      {canViewUsers && !loading && !error && users.length === 0 ? (
+      {canViewUsers && refreshError ? (
+        <p className="text-sm text-destructive" role="status">
+          Could not refresh users. Showing the most recent data.
+        </p>
+      ) : null}
+      {canViewUsers && !initialLoading && !blockingError && users.length === 0 ? (
         <EmptyState title="No users found" description={emptyDescription} />
       ) : null}
 

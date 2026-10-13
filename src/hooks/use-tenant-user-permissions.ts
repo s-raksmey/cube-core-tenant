@@ -1,11 +1,9 @@
 import { useQuery } from "@apollo/client/react";
 import { TENANT_USER_PERMISSIONS_QUERY } from "@/lib/apollo/operations";
 
-type FetchPolicy = "cache-first" | "cache-and-network";
-
 /** Loads tenant permissions once and exposes them as named capabilities. */
-export function useTenantUserPermissions(fetchPolicy: FetchPolicy = "cache-first") {
-  const query = useQuery(TENANT_USER_PERMISSIONS_QUERY, { fetchPolicy });
+export function useTenantUserPermissions() {
+  const query = useQuery(TENANT_USER_PERMISSIONS_QUERY);
   const permissions = new Set(query.data?.tenantUserPermissions ?? []);
   return {
     ...query,

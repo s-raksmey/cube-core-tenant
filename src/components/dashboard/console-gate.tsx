@@ -56,21 +56,16 @@ export function ConsoleGate({ children }: { children: React.ReactNode }) {
 
   if (!ready) {
     return (
-      <>
-        <div className="flex min-h-svh items-center justify-center bg-background p-6">
-          <div className="w-full max-w-md space-y-3">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-40 w-full" />
-            <Skeleton className="h-10 w-2/3" />
-            <p className="text-center text-sm text-muted-foreground">
-              Opening workspace…
-            </p>
-          </div>
+      <div className="flex min-h-svh items-center justify-center bg-background p-6">
+        <div className="w-full max-w-md space-y-3">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-10 w-2/3" />
+          <p className="text-center text-sm text-muted-foreground">
+            Opening workspace…
+          </p>
         </div>
-        <div hidden aria-hidden>
-          {children}
-        </div>
-      </>
+      </div>
     );
   }
 

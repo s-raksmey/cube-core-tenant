@@ -75,6 +75,8 @@ export function TenantBrandingPanel() {
   const [confirmAssets, setConfirmAssets] = useState<BrandingAsset[] | null>(null);
   const [pendingAssetAction, setPendingAssetAction] = useState<PendingAssetAction | null>(null);
   const hasChanges = Object.keys(changes).length > 0;
+  const branding = data?.myTenantBranding;
+  const initialLoading = permissionsLoading || (loading && !branding);
 
   function requestReplace(asset: BrandingAsset, file?: File) {
     if (!file) return;
@@ -137,8 +139,8 @@ export function TenantBrandingPanel() {
     }
   }
 
-  if (loading || permissionsLoading) return <p className="text-sm text-muted-foreground">Loading branding…</p>;
-  if (error) return <p className="text-sm text-destructive">{error.message}</p>;
+  if (initialLoading) return <p className="text-sm text-muted-foreground">Loading branding…</p>;
+  if (error && !branding) return <p className="text-sm text-destructive">{error.message}</p>;
   if (!canView) return <p className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">You do not have permission to view this tenant’s settings.</p>;
 
   return <div className="space-y-5">
@@ -146,7 +148,7 @@ export function TenantBrandingPanel() {
     {!canEdit ? <p className="rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">You can view the tenant branding, but only an Admin can edit it.</p> : null}
     <div className="grid gap-5 lg:grid-cols-2">{BRANDING_ASSETS.map((config) => {
       const change = changes[config.asset];
-      return <BrandingAssetCard key={config.asset} config={config} url={data?.myTenantBranding?.[BRANDING_FIELDS[config.asset]] ?? null} selectedFile={change instanceof File ? change : undefined} removalPending={change === null} canEdit={canEdit} saving={saving} onSelect={requestReplace} onRemove={(asset) => setPendingAssetAction({ type: "remove", asset })} onSave={(asset) => setConfirmAssets([asset])} />;
+      return <BrandingAssetCard key={config.asset} config={config} url={branding?.[BRANDING_FIELDS[config.asset]] ?? null} selectedFile={change instanceof File ? change : undefined} removalPending={change === null} canEdit={canEdit} saving={saving} onSelect={requestReplace} onRemove={(asset) => setPendingAssetAction({ type: "remove", asset })} onSave={(asset) => setConfirmAssets([asset])} />;
     })}</div>
     {canEdit ? <div className="sticky bottom-4 z-10 flex items-center justify-between gap-4 rounded-xl border border-border bg-card/95 px-5 py-3 backdrop-blur"><p className="text-sm text-muted-foreground">{hasChanges ? "You have unsaved branding changes." : "No unsaved changes."}</p><Button type="button" disabled={!hasChanges || saving} onClick={() => setConfirmAssets(Object.keys(changes) as BrandingAsset[])}>{saving ? "Saving…" : "Save all changes"}</Button></div> : null}
     {message ? <p className="text-sm text-muted-foreground" role="status">{message}</p> : null}

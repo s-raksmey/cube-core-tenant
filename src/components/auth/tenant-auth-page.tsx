@@ -1,7 +1,7 @@
 import { cache } from "react";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { connection } from "next/server";
 import { TenantAuthFlow } from "@/components/auth/tenant-auth-flow";
 import { TenantUnavailable } from "@/components/auth/tenant-unavailable";
 import {
@@ -37,7 +37,6 @@ async function resolveTenant(host: ManagementHostResolution) {
 }
 
 export async function tenantAuthMetadata(): Promise<Metadata> {
-  await connection();
   const host = managementHostFromHeader((await headers()).get("host"));
   const tenant = await resolveTenant(host);
   return {
@@ -68,5 +67,9 @@ async function TenantAuthForRequest({ showLogin }: { showLogin: boolean }) {
 }
 
 export function TenantAuthPage({ showLogin = false }: { showLogin?: boolean }) {
-  return <TenantAuthForRequest showLogin={showLogin} />;
+  return (
+    <Suspense fallback={<TenantUnavailable />}>
+      <TenantAuthForRequest showLogin={showLogin} />
+    </Suspense>
+  );
 }

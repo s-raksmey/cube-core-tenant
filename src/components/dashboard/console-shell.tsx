@@ -2,7 +2,8 @@
 
 import { useEffect, type CSSProperties } from "react";
 import { LogOut } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useApolloClient } from "@apollo/client/react";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -21,15 +22,20 @@ export function ConsoleShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const apollo = useApolloClient();
 
   useEffect(() => {
     document.title = user.tenant.name;
   }, [pathname, user.tenant.name]);
 
   async function handleLogout() {
-    await fetch("/auth/logout", { method: "POST" });
-    // Hard navigation clears any in-memory 2FA/login step state.
-    window.location.assign("/login");
+    try {
+      await fetch("/auth/logout", { method: "POST" });
+    } finally {
+      await apollo.clearStore();
+      router.replace("/");
+    }
   }
 
   return (
