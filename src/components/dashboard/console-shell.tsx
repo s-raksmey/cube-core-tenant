@@ -2,6 +2,14 @@
 
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
@@ -14,7 +22,7 @@ import { tenantDocumentTitleStorageKey } from "@/lib/tenant-document-title";
 import { useApolloClient } from "@apollo/client/react";
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useLayoutEffect, type CSSProperties } from "react";
+import { useLayoutEffect, useState, type CSSProperties } from "react";
 
 export function ConsoleShell({
   user,
@@ -25,6 +33,8 @@ export function ConsoleShell({
 }) {
   const router = useRouter();
   const apollo = useApolloClient();
+  const [logoutOpen, setLogoutOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useLayoutEffect(() => {
     document.title = user.tenant.name;
@@ -37,6 +47,16 @@ export function ConsoleShell({
     } finally {
       await apollo.clearStore();
       router.replace("/");
+    }
+  }
+
+  async function confirmLogout() {
+    setLoggingOut(true);
+    try {
+      await handleLogout();
+      // Keep the progress state visible until navigation unmounts this shell.
+    } catch {
+      setLoggingOut(false);
     }
   }
 
@@ -56,7 +76,7 @@ export function ConsoleShell({
             <Button
               variant="outline"
               size="sm"
-              onClick={handleLogout}
+              onClick={() => setLogoutOpen(true)}
               className="shrink-0"
             >
               <LogOut className="size-4" />
@@ -66,6 +86,35 @@ export function ConsoleShell({
         </header>
         <div className="flex-1 p-4 md:p-6">{children}</div>
       </SidebarInset>
+      <Dialog
+        open={logoutOpen}
+        onOpenChange={(open) => {
+          if (!loggingOut) setLogoutOpen(open);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Log out?</DialogTitle>
+            <DialogDescription>
+              You will need to sign in again to access {user.tenant.name}.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={loggingOut}
+              onClick={() => setLogoutOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="button" disabled={loggingOut} onClick={() => void confirmLogout()}>
+              <LogOut className="size-4" />
+              {loggingOut ? "Logging out…" : "Log out"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </SidebarProvider>
   );
 }
