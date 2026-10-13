@@ -9,6 +9,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import type { AuthUser } from "@/lib/types";
+import { clearTenantSession } from "@/lib/auth/session-actions";
 import { useApolloClient } from "@apollo/client/react";
 import { LogOut } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
@@ -31,7 +32,7 @@ export function ConsoleShell({
 
   async function handleLogout() {
     try {
-      await fetch("/auth/logout", { method: "POST" });
+      await clearTenantSession();
     } finally {
       await apollo.clearStore();
       router.replace("/");

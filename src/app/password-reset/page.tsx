@@ -5,11 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  completeTenantPasswordReset,
+  validateTenantPasswordResetToken,
+} from "@/lib/auth/session-actions";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useState, type FormEvent } from "react";
 
-export default function PasswordResetPage() {
+function PasswordResetForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
@@ -30,20 +34,13 @@ export default function PasswordResetPage() {
         setValidating(false);
         return;
       }
-      const response = await fetch(
-        `/auth/password-reset/validate?token=${encodeURIComponent(token)}`,
-        { cache: "no-store" },
-      );
+      const result = await validateTenantPasswordResetToken(token);
       setValidating(false);
-      if (!response.ok) {
+      if (!result.ok) {
         setValid(false);
         return;
       }
-      const payload = (await response.json()) as {
-        valid?: boolean;
-        expiresAt?: string;
-        username?: string;
-      };
+      const payload = result.payload;
       setValid(!!payload.valid);
       setExpiresAt(payload.expiresAt ?? null);
       setUsername(typeof payload.username === "string" ? payload.username : "");
@@ -56,16 +53,15 @@ export default function PasswordResetPage() {
     setLoading(true);
     setError(null);
 
-    const response = await fetch("/auth/password-reset/complete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, password, confirmPassword }),
+    const result = await completeTenantPasswordReset({
+      token,
+      password,
+      confirmPassword,
     });
-    const payload = (await response.json()) as { error?: string };
     setLoading(false);
 
-    if (!response.ok) {
-      setError(payload.error ?? "Password reset failed");
+    if (!result.ok) {
+      setError(result.error);
       return;
     }
 
@@ -162,5 +158,21 @@ export default function PasswordResetPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function PasswordResetFallback() {
+  return (
+    <div className="flex min-h-svh items-center justify-center bg-background px-4">
+      <p className="text-sm text-muted-foreground">Validating reset link…</p>
+    </div>
+  );
+}
+
+export default function PasswordResetPage() {
+  return (
+    <Suspense fallback={<PasswordResetFallback />}>
+      <PasswordResetForm />
+    </Suspense>
   );
 }

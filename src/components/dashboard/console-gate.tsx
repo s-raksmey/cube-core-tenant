@@ -1,6 +1,7 @@
 "use client";
 
 import { ConsoleShell } from "@/components/dashboard/console-shell";
+import { ConsoleUserProvider } from "@/components/providers/console-user-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ME_QUERY } from "@/lib/apollo/operations";
 import type { AuthUser } from "@/lib/types";
@@ -69,5 +70,9 @@ export function ConsoleGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <ConsoleShell user={user}>{children}</ConsoleShell>;
+  return (
+    <ConsoleUserProvider user={user}>
+      <ConsoleShell user={user}>{children}</ConsoleShell>
+    </ConsoleUserProvider>
+  );
 }

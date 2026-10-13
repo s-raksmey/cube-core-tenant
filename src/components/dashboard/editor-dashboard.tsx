@@ -5,10 +5,8 @@ import { ChartPanel } from "@/components/dashboard/chart-panel";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { PageHeader } from "@/components/dashboard/page-header";
-import {
-  formatBytes,
-  useTenantDashboardData,
-} from "@/components/dashboard/tenant-dashboard-data";
+import { useTenantDashboardData } from "@/hooks/use-tenant-dashboard-data";
+import { formatBytes } from "@/lib/format-bytes";
 import { TenantLandingHero } from "@/components/dashboard/tenant-landing-hero";
 import { Button } from "@/components/ui/button";
 import type { AuthUser } from "@/lib/types";

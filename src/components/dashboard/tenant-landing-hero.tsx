@@ -1,18 +1,9 @@
 "use client";
 
-import { gql } from "@apollo/client";
-import { useQuery } from "@apollo/client/react";
 import Image from "next/image";
 
+import { useTenantManagementBranding } from "@/hooks/use-tenant-management-branding";
 import type { AuthUser } from "@/lib/types";
-
-const MY_MANAGEMENT_BRANDING = gql`
-  query DashboardManagementBranding {
-    myTenantBranding {
-      managementLogoUrl
-    }
-  }
-`;
 
 const storageBase =
   process.env.NEXT_PUBLIC_GRAPHQL_SERVER_URL?.replace(/\/graphql$/, "") ??
@@ -29,10 +20,7 @@ function initials(name: string) {
 }
 
 export function TenantLandingHero({ user }: { user: AuthUser }) {
-  const { data } = useQuery<{
-    myTenantBranding: { managementLogoUrl: string | null };
-  }>(MY_MANAGEMENT_BRANDING);
-  const logo = data?.myTenantBranding.managementLogoUrl;
+  const { managementLogoUrl: logo } = useTenantManagementBranding();
   const roleLabel =
     user.role === "ADMIN" ? "Tenant administration" : "Editor workspace";
 

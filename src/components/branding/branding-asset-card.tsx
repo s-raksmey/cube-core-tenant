@@ -1,10 +1,6 @@
 "use client";
 
-import type {
-  BrandingAsset,
-  BrandingAssetConfig,
-  PreviewKind,
-} from "@/components/branding/branding-types";
+import type { BrandingAsset, BrandingAssetConfig, PreviewKind } from "@/types/branding.types";
 import { Button } from "@/components/ui/button";
 import { ImageIcon, Share2, Trash2, Upload } from "lucide-react";
 import Image from "next/image";

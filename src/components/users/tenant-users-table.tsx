@@ -12,29 +12,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-export type TenantUserRow = {
-  id: string;
-  fullName: string | null;
-  firstName: string | null;
-  lastName: string | null;
-  username: string | null;
-  email: string;
-  role: string;
-  status: string | null;
-  membershipStatus: string | null;
-  totpEnabled: boolean;
-  createdAt: string | null;
-  lastLoginAt: string | null;
-};
-
-export type TenantUserActions = {
-  canEditUsers: boolean;
-  canChangeRoles: boolean;
-  canActivateUsers: boolean;
-  canSuspendUsers: boolean;
-  canResetPasswords: boolean;
-  canDeleteUsers: boolean;
-};
+import type {
+  TenantUserActions,
+  TenantUserRow,
+} from "@/types/tenant-user.types";
+export type { TenantUserActions, TenantUserRow } from "@/types/tenant-user.types";
 
 type TenantUsersTableProps = {
   users: TenantUserRow[];

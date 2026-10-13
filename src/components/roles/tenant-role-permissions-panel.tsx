@@ -8,8 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { TENANT_ROLE_PERMISSION_SUMMARY_QUERY } from "@/lib/apollo/operations";
-import { useQuery } from "@apollo/client/react";
+import { useTenantRolePermissionSummary } from "@/hooks/use-tenant-role-permission-summary";
 
 const permissions = [
   ["USERS_VIEW", "View users"],
@@ -28,10 +27,6 @@ const settingsPermissions = [
 ] as const;
 
 type Role = "ADMIN" | "EDITOR";
-type Permission =
-  | (typeof permissions)[number][0]
-  | (typeof settingsPermissions)[number][0];
-
 function ReadOnlySwitch({
   checked,
   label,
@@ -64,16 +59,8 @@ function ReadOnlySwitch({
 }
 
 export function TenantRolePermissionsPanel() {
-  const { data, loading, error } = useQuery(
-    TENANT_ROLE_PERMISSION_SUMMARY_QUERY,
-    { fetchPolicy: "cache-first" },
-  );
-  const byRole = new Map(
-    (data?.tenantRolePermissionSummary ?? []).map((role) => [
-      role.role as Role,
-      new Set(role.permissions as Permission[]),
-    ]),
-  );
+  const { data, loading, error, permissionsByRole } =
+    useTenantRolePermissionSummary();
 
   return (
     <div className="space-y-5">
@@ -119,7 +106,7 @@ export function TenantRolePermissionsPanel() {
               {(["ADMIN", "EDITOR"] as const).map((role) => (
                 <div key={role} className="flex justify-center">
                   <ReadOnlySwitch
-                    checked={byRole.get(role)?.has(permission) ?? false}
+                    checked={permissionsByRole.get(role)?.has(permission) ?? false}
                     label={label}
                     role={role}
                   />
@@ -153,7 +140,7 @@ export function TenantRolePermissionsPanel() {
               {(["ADMIN", "EDITOR"] as const).map((role) => (
                 <div key={role} className="flex justify-center">
                   <ReadOnlySwitch
-                    checked={byRole.get(role)?.has(permission) ?? false}
+                    checked={permissionsByRole.get(role)?.has(permission) ?? false}
                     label={label}
                     role={role}
                   />

@@ -6,11 +6,16 @@ import {
   type TenantAuthStep,
 } from "@/components/auth/tenant-auth-card";
 import { Button } from "@/components/ui/button";
-import type { AuthUser } from "@/lib/types";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import {
+  loginTenant,
+  verifyTenantLoginTotp,
+  verifyTenantRecoveryCode,
+  verifyTenantTotpEnrollment,
+} from "@/lib/auth/session-actions";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
 type Step = TenantAuthStep;
@@ -52,45 +57,21 @@ export function TenantAuthFlow({
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: email.trim(),
-          password,
-        }),
+      const result = await loginTenant({ email: email.trim(), password });
+      if (!result.ok) {
+        setError(result.error);
+        setLoading(false);
+        return;
+      }
+      setChallenge({
+        challengeToken: result.challengeToken,
+        nextStep: result.nextStep,
+        qrCodeDataUrl: result.qrCodeDataUrl,
+        manualEntryKey: result.manualEntryKey,
       });
-      const payload = (await response.json()) as {
-        challengeToken?: string;
-        nextStep?: "TOTP_ENROLL" | "TOTP_VERIFY";
-        qrCodeDataUrl?: string;
-        manualEntryKey?: string;
-        user?: AuthUser;
-        error?: string;
-      };
-      if (!response.ok) {
-        setError(payload.error ?? "Invalid username/email or password");
-        setLoading(false);
-        return;
-      }
-      if (payload.user) {
-        router.replace("/dashboard");
-        return;
-      }
-      if (payload.challengeToken && payload.nextStep) {
-        setChallenge({
-          challengeToken: payload.challengeToken,
-          nextStep: payload.nextStep,
-          qrCodeDataUrl: payload.qrCodeDataUrl,
-          manualEntryKey: payload.manualEntryKey,
-        });
-        setCode("");
-        autoSubmitRef.current = false;
-        setStep(payload.nextStep === "TOTP_ENROLL" ? "enroll" : "verify");
-        setLoading(false);
-        return;
-      }
-      setError("Unexpected login response");
+      setCode("");
+      autoSubmitRef.current = false;
+      setStep(result.nextStep === "TOTP_ENROLL" ? "enroll" : "verify");
       setLoading(false);
     } catch {
       setError("Could not reach the sign-in service");
@@ -102,26 +83,15 @@ export function TenantAuthFlow({
     if (!challenge || loading) return;
     setLoading(true);
     setError(null);
-    const endpoint = recovery
-      ? "/auth/2fa/recovery"
-      : activeStep === "enroll"
-        ? "/auth/2fa/enrollment/verify"
-        : "/auth/2fa/verify";
     try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          challengeToken: challenge.challengeToken,
-          code: nextCode,
-        }),
-      });
-      const payload = (await response.json()) as {
-        user?: AuthUser;
-        error?: string;
-      };
-      if (!response.ok) {
-        const message = payload.error ?? "Verification failed";
+      const input = { challengeToken: challenge.challengeToken, code: nextCode };
+      const result = recovery
+        ? await verifyTenantRecoveryCode(input)
+        : activeStep === "enroll"
+          ? await verifyTenantTotpEnrollment(input)
+          : await verifyTenantLoginTotp(input);
+      if (!result.ok) {
+        const message = result.error;
         setError(message);
         setLoading(false);
         autoSubmitRef.current = false;

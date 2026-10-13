@@ -11,8 +11,22 @@ const ACCESS_BY_AUDIENCE: Record<ConsoleAudience, string> = {
   TENANT_APP: "management_console_tenant_access",
 };
 
-export function applyAuthCookies(
-  response: NextResponse,
+type CookieWriter = {
+  set: (
+    name: string,
+    value: string,
+    options: {
+      httpOnly: boolean;
+      sameSite: "lax";
+      secure: boolean;
+      path: string;
+      maxAge: number;
+    },
+  ) => void;
+};
+
+function writeAuthCookies(
+  store: CookieWriter,
   input: {
     audience: ConsoleAudience;
     accessToken: string;
@@ -20,18 +34,14 @@ export function applyAuthCookies(
   },
 ) {
   const secure = process.env.NODE_ENV === "production";
-  response.cookies.set(
-    REFRESH_BY_AUDIENCE[input.audience],
-    input.refreshToken,
-    {
-      httpOnly: true,
-      sameSite: "lax",
-      secure,
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30,
-    },
-  );
-  response.cookies.set(ACCESS_BY_AUDIENCE[input.audience], input.accessToken, {
+  store.set(REFRESH_BY_AUDIENCE[input.audience], input.refreshToken, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure,
+    path: "/",
+    maxAge: 60 * 60 * 24 * 30,
+  });
+  store.set(ACCESS_BY_AUDIENCE[input.audience], input.accessToken, {
     httpOnly: true,
     sameSite: "lax",
     secure,
@@ -40,16 +50,13 @@ export function applyAuthCookies(
   });
 }
 
-export function clearAuthCookies(
-  response: NextResponse,
-  audience: ConsoleAudience,
-) {
+function writeClearAuthCookies(store: CookieWriter, audience: ConsoleAudience) {
   const secure = process.env.NODE_ENV === "production";
   for (const name of [
     REFRESH_BY_AUDIENCE[audience],
     ACCESS_BY_AUDIENCE[audience],
   ]) {
-    response.cookies.set(name, "", {
+    store.set(name, "", {
       httpOnly: true,
       sameSite: "lax",
       secure,
@@ -57,6 +64,49 @@ export function clearAuthCookies(
       maxAge: 0,
     });
   }
+}
+
+export function applyAuthCookies(
+  response: NextResponse,
+  input: {
+    audience: ConsoleAudience;
+    accessToken: string;
+    refreshToken: string;
+  },
+) {
+  writeAuthCookies(
+    { set: (name, value, options) => response.cookies.set(name, value, options) },
+    input,
+  );
+}
+
+export function clearAuthCookies(response: NextResponse, audience: ConsoleAudience) {
+  writeClearAuthCookies(
+    { set: (name, value, options) => response.cookies.set(name, value, options) },
+    audience,
+  );
+}
+
+export async function setAuthCookiesOnStore(input: {
+  audience: ConsoleAudience;
+  accessToken: string;
+  refreshToken: string;
+}) {
+  const { cookies } = await import("next/headers");
+  const store = await cookies();
+  writeAuthCookies(
+    { set: (name, value, options) => store.set(name, value, options) },
+    input,
+  );
+}
+
+export async function clearAuthCookiesOnStore(audience: ConsoleAudience) {
+  const { cookies } = await import("next/headers");
+  const store = await cookies();
+  writeClearAuthCookies(
+    { set: (name, value, options) => store.set(name, value, options) },
+    audience,
+  );
 }
 
 export async function readAccessToken(audience: ConsoleAudience) {

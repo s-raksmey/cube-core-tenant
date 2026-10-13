@@ -1,12 +1,8 @@
 "use client";
 
 import { BrandingAssetCard } from "@/components/branding/branding-asset-card";
-import {
-  BRANDING_ASSETS,
-  BRANDING_FIELDS,
-  type BrandingAsset,
-  type BrandingRecord,
-} from "@/components/branding/branding-types";
+import { BRANDING_ASSETS, BRANDING_FIELDS } from "@/components/branding/branding-config";
+import type { BrandingAsset, BrandingRecord } from "@/types/branding.types";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

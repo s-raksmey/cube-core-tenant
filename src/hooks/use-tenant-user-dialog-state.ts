@@ -4,15 +4,10 @@ import type {
   TenantUserDeleteTarget,
   TenantUserEditTarget,
   TenantUserLinkTarget,
-} from "@/components/users/tenant-user-dialogs";
+  TenantUserLinkResult,
+} from "@/types/tenant-user.types";
 import type { SubTenantRole } from "@/lib/types";
 import { useState } from "react";
-
-export type TenantUserLinkResult = {
-  url: string;
-  expiresAt: string;
-  label: string;
-};
 
 /** Groups form and dialog state for tenant user-management actions. */
 export function useTenantUserDialogState() {
@@ -98,3 +93,5 @@ export function useTenantUserDialogState() {
     openEdit,
   };
 }
+
+export type TenantUserDialogState = ReturnType<typeof useTenantUserDialogState>;

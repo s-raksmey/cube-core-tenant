@@ -1,357 +1,110 @@
 "use client";
 
 import { EmptyState } from "@/components/dashboard/empty-state";
-import {
-  TenantUserDialogs,
-  type TenantUserLinkTarget,
-} from "@/components/users/tenant-user-dialogs";
+import { useConsoleUser } from "@/components/providers/console-user-provider";
+import { useTenantUserActions } from "@/hooks/use-tenant-user-actions";
+import { useTenantUserDialogState } from "@/hooks/use-tenant-user-dialog-state";
+import { useTenantUsers } from "@/hooks/use-tenant-users";
+import { TenantUserDialogs } from "@/components/users/tenant-user-dialogs";
 import { TenantUserListToolbar } from "@/components/users/tenant-user-list-toolbar";
-import {
-  TenantUsersTable,
-  type TenantUserRow,
-} from "@/components/users/tenant-users-table";
-import { useTenantUserDialogState } from "@/components/users/use-tenant-user-dialog-state";
+import { TenantUsersTable } from "@/components/users/tenant-users-table";
 import { useTenantUserPermissions } from "@/hooks/use-tenant-user-permissions";
-import {
-  CREATE_TENANT_USER,
-  DELETE_TENANT_USER,
-  GENERATE_TENANT_USER_ACTIVATION,
-  GENERATE_TENANT_USER_PASSWORD_RESET,
-  TENANT_USER_ACTIVATION_LINK,
-  TENANT_USERS_QUERY,
-  UPDATE_TENANT_USER,
-} from "@/lib/apollo/operations";
-import type { AuthUser, SubTenantRole } from "@/lib/types";
-import { useLazyQuery, useMutation, useQuery } from "@apollo/client/react";
-import { useMemo, useState } from "react";
+import type { SubTenantRole } from "@/lib/types";
 
-export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const pageSize = 10;
-
-  const {
-    loading: loadingPermissions,
-    error: permissionsError,
-    canViewUsers,
-    canCreateUsers,
-    canEditUsers,
-    canChangeRoles,
-    canActivateUsers,
-    canResetPasswords,
-    canSuspendUsers,
-    canDeleteUsers,
-  } = useTenantUserPermissions();
-
-  const { data, loading, error, refetch } = useQuery(TENANT_USERS_QUERY, {
-    variables: { search: search || null, page, pageSize },
-    skip: !canViewUsers,
+/** Coordinates tenant user-management UI, data, dialog state, and actions. */
+export function TenantUsersPanel() {
+  const viewer = useConsoleUser();
+  const permissions = useTenantUserPermissions();
+  const list = useTenantUsers({ canViewUsers: permissions.canViewUsers });
+  const dialogs = useTenantUserDialogState();
+  const actions = useTenantUserActions({
+    viewerId: viewer.id,
+    canChangeRoles: permissions.canChangeRoles,
+    canSuspendUsers: permissions.canSuspendUsers,
+    dialogs,
+    list,
   });
 
-  const [createUser, { loading: creating }] = useMutation(CREATE_TENANT_USER);
-  const [deleteUser, { loading: deleting }] = useMutation(DELETE_TENANT_USER);
-  const [generateActivation, { loading: regenerating }] = useMutation(
-    GENERATE_TENANT_USER_ACTIVATION,
-  );
-  const [generateReset] = useMutation(GENERATE_TENANT_USER_PASSWORD_RESET);
-  const [updateUser, { loading: updating }] = useMutation(UPDATE_TENANT_USER);
-  const [loadActivationLink, { loading: loadingActivationLink }] = useLazyQuery(
-    TENANT_USER_ACTIVATION_LINK,
-    { fetchPolicy: "no-cache" },
-  );
-  const {
-    createOpen,
-    setCreateOpen,
-    editTarget,
-    setEditTarget,
-    deleteTarget,
-    setDeleteTarget,
-    deleteError,
-    setDeleteError,
-    firstName,
-    setFirstName,
-    lastName,
-    setLastName,
-    email,
-    setEmail,
-    role,
-    setRole,
-    accountStatus,
-    setAccountStatus,
-    formError,
-    setFormError,
-    linkResult,
-    setLinkResult,
-    activationTarget,
-    setActivationTarget,
-    activationLinkUser,
-    setActivationLinkUser,
-    activationLinkUnavailable,
-    setActivationLinkUnavailable,
-    activationLookupFailed,
-    setActivationLookupFailed,
-    openCreate,
-    openEdit,
-  } = useTenantUserDialogState();
-
-  const pageData = data?.tenantUsers;
-  const users = pageData?.items ?? [];
-  const total = pageData?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const initialLoading = loading && !pageData;
-  const blockingError = error && !pageData;
-  const refreshError = error && !!pageData;
-
-  const emptyDescription = useMemo(
-    () =>
-      search
-        ? "No users match your search."
-        : "Create the first Admin or Editor for this tenant.",
-    [search],
-  );
-
-  async function handleCreate() {
-    setFormError(null);
-    try {
-      if (editTarget) {
-        await updateUser({
-          variables: {
-            id: editTarget.id,
-            input: {
-              firstName,
-              lastName,
-              email,
-              ...(editTarget.id === viewer.id || !canChangeRoles
-                ? {}
-                : { role }),
-              ...(editTarget.id === viewer.id ||
-              !canSuspendUsers ||
-              accountStatus ===
-                (editTarget.membershipStatus === "DISABLED"
-                  ? "INACTIVE"
-                  : "ACTIVE")
-                ? {}
-                : { suspended: accountStatus === "INACTIVE" }),
-            },
-          },
-        });
-        setCreateOpen(false);
-        setEditTarget(null);
-        await refetch();
-        return;
-      }
-      const result = await createUser({
-        variables: { firstName, lastName, email, role },
-      });
-      const payload = result.data?.createAdminUser;
-      setCreateOpen(false);
-      if (payload) {
-        setLinkResult({
-          url: payload.activationUrl,
-          expiresAt: payload.expiresAt,
-          label: `Activation link for ${payload.user.email}`,
-        });
-      }
-      await refetch();
-    } catch (err) {
-      setFormError(
-        err instanceof Error ? err.message : "Could not create user",
-      );
-    }
+  if (!permissions.loading && !permissions.canViewUsers) {
+    return (
+      <EmptyState
+        title="User Management unavailable"
+        description="Your role does not have permission to view users."
+      />
+    );
   }
 
-  async function handleDelete() {
-    if (!deleteTarget) return;
-    setDeleteError(null);
-    try {
-      await deleteUser({ variables: { id: deleteTarget.id } });
-      const nextTotal = Math.max(0, total - 1);
-      const nextPages = Math.max(1, Math.ceil(nextTotal / pageSize));
-      if (page > nextPages) setPage(nextPages);
-      setDeleteTarget(null);
-      await refetch({ page: Math.min(page, nextPages) });
-    } catch (err) {
-      setDeleteError(
-        err instanceof Error ? err.message : "Could not remove user",
-      );
-    }
-  }
-
-  async function confirmActivationLink() {
-    if (!activationTarget) return;
-    const user = activationTarget;
-    setFormError(null);
-    try {
-      const result = await generateActivation({
-        variables: { userId: user.id },
-      });
-      const payload = result.data?.generateTenantUserActivationLink;
-      if (!payload) throw new Error("Could not generate activation link");
-      setActivationTarget(null);
-      setActivationLinkUser(null);
-      setActivationLinkUnavailable(false);
-      setActivationLookupFailed(false);
-      setLinkResult({
-        url: payload.activationUrl,
-        expiresAt: payload.expiresAt,
-        label: `Activation link for ${user.email}`,
-      });
-      await refetch();
-    } catch (error) {
-      setFormError(
-        error instanceof Error ? error.message : "Could not reactivate user",
-      );
-    }
-  }
-
-  async function viewActivationLink(user: TenantUserLinkTarget) {
-    setFormError(null);
-    setActivationLinkUnavailable(false);
-    setActivationLookupFailed(false);
-    try {
-      const result = await loadActivationLink({
-        variables: { userId: user.id },
-      });
-      const payload = result.data?.tenantUserActivationLink;
-      if (payload) {
-        setActivationLinkUser(user);
-        setLinkResult({
-          url: payload.activationUrl,
-          expiresAt: payload.expiresAt,
-          label: `Activation link for ${user.email}`,
-        });
-        return;
-      }
-      setActivationLinkUnavailable(true);
-      setActivationTarget(user);
-    } catch (error) {
-      setFormError(
-        error instanceof Error
-          ? error.message
-          : "Could not retrieve the activation link",
-      );
-      setActivationLookupFailed(true);
-      setActivationTarget(user);
-    }
-  }
-
-  function requestActivationRegeneration() {
-    if (!activationLinkUser) return;
-    setLinkResult(null);
-    setActivationTarget(activationLinkUser);
-    setActivationLinkUser(null);
-    setActivationLinkUnavailable(false);
-    setActivationLookupFailed(false);
-    setFormError(null);
-  }
-
-  function retryActivationLookup() {
-    if (!activationTarget) return;
-    const user = activationTarget;
-    setActivationTarget(null);
-    void viewActivationLink(user);
-  }
-
-  async function showPasswordResetLink(user: { id: string; email: string }) {
-    setFormError(null);
-    try {
-      const result = await generateReset({ variables: { userId: user.id } });
-      const payload = result.data?.generateTenantUserPasswordResetLink;
-      if (!payload) throw new Error("Could not generate password reset link");
-      setLinkResult({
-        url: payload.resetUrl,
-        expiresAt: payload.expiresAt,
-        label: `Password reset link for ${user.email}`,
-      });
-    } catch (error) {
-      setFormError(
-        error instanceof Error
-          ? error.message
-          : "Could not generate password reset link",
-      );
-    }
-  }
+  const initialLoading = permissions.loading || list.initialLoading;
 
   return (
     <div className="space-y-4">
       <TenantUserListToolbar
-        searchInput={searchInput}
-        canCreateUsers={canCreateUsers}
-        onSearchInputChange={setSearchInput}
-        onSearch={() => {
-          setPage(1);
-          setSearch(searchInput.trim());
-        }}
-        onCreate={() => openCreate(canChangeRoles)}
+        searchInput={list.searchInput}
+        canCreateUsers={permissions.canCreateUsers}
+        onSearchInputChange={list.setSearchInput}
+        onSearch={list.applySearch}
+        onCreate={() => dialogs.openCreate(permissions.canChangeRoles)}
       />
 
-      {loadingPermissions ? (
-        <p className="text-sm text-muted-foreground">Loading permissions…</p>
+      {initialLoading ? (
+        <div className="flex min-h-32 items-center justify-center" aria-busy="true">
+          <p className="text-sm text-muted-foreground">Loading users…</p>
+        </div>
       ) : null}
-      {permissionsError ? (
-        <p className="text-sm text-destructive">
-          Unable to load your user-management permissions.
-        </p>
-      ) : null}
-      {!loadingPermissions && !permissionsError && !canViewUsers ? (
+
+      {list.blockingError ? (
         <EmptyState
-          title="User Management unavailable"
-          description="Your role does not have permission to view users."
+          title="Unable to load users"
+          description="The user list could not be loaded. Please try again."
         />
       ) : null}
-      {canViewUsers && initialLoading ? (
-        <p className="text-sm text-muted-foreground">Loading users…</p>
-      ) : null}
-      {canViewUsers && blockingError ? (
-        <p className="text-sm text-destructive">Unable to load users.</p>
-      ) : null}
-      {canViewUsers && refreshError ? (
+
+      {list.refreshError ? (
         <p className="text-sm text-destructive" role="status">
           Could not refresh users. Showing the most recent data.
         </p>
       ) : null}
-      {canViewUsers &&
-      !initialLoading &&
-      !blockingError &&
-      users.length === 0 ? (
-        <EmptyState title="No users found" description={emptyDescription} />
+
+      {!initialLoading && !list.blockingError && list.users.length === 0 ? (
+        <EmptyState title="No users found" description={list.emptyDescription} />
       ) : null}
 
-      {canViewUsers && users.length > 0 ? (
+      {list.users.length > 0 ? (
         <TenantUsersTable
-          users={users as TenantUserRow[]}
+          users={list.users}
           viewerId={viewer.id}
           actions={{
-            canEditUsers,
-            canChangeRoles,
-            canActivateUsers,
-            canSuspendUsers,
-            canResetPasswords,
-            canDeleteUsers,
+            canEditUsers: permissions.canEditUsers,
+            canChangeRoles: permissions.canChangeRoles,
+            canActivateUsers: permissions.canActivateUsers,
+            canSuspendUsers: permissions.canSuspendUsers,
+            canResetPasswords: permissions.canResetPasswords,
+            canDeleteUsers: permissions.canDeleteUsers,
           }}
-          loadingActivationLink={loadingActivationLink}
-          regenerating={regenerating}
-          page={page}
-          totalPages={totalPages}
-          total={total}
-          onPageChange={setPage}
+          loadingActivationLink={actions.loadingActivationLink}
+          regenerating={actions.regenerating}
+          page={list.page}
+          totalPages={list.totalPages}
+          total={list.total}
+          onPageChange={(nextPage) => {
+            if (nextPage !== list.page) list.setPage(nextPage);
+          }}
           onEdit={(user) =>
-            openEdit({
+            dialogs.openEdit({
               id: user.id,
-              firstName: user.firstName ?? null,
-              lastName: user.lastName ?? null,
+              firstName: user.firstName,
+              lastName: user.lastName,
               email: user.email,
               role: user.role as SubTenantRole,
               status: user.status,
               membershipStatus: user.membershipStatus,
             })
           }
-          onActivation={(user) => void viewActivationLink(user)}
-          onResetPassword={(user) => void showPasswordResetLink(user)}
+          onActivation={actions.viewActivationLink}
+          onResetPassword={actions.showPasswordResetLink}
           onDelete={(user) => {
-            setDeleteError(null);
-            setDeleteTarget({
+            dialogs.setDeleteError(null);
+            dialogs.setDeleteTarget({
               id: user.id,
               username: user.username,
               email: user.email,
@@ -363,47 +116,47 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
 
       <TenantUserDialogs
         viewerId={viewer.id}
-        createOpen={createOpen}
-        setCreateOpen={setCreateOpen}
-        editTarget={editTarget}
-        setEditTarget={setEditTarget}
-        deleteTarget={deleteTarget}
-        setDeleteTarget={setDeleteTarget}
-        activationTarget={activationTarget}
-        setActivationTarget={setActivationTarget}
-        activationLinkUser={activationLinkUser}
-        setActivationLinkUser={setActivationLinkUser}
-        linkResult={linkResult}
-        setLinkResult={setLinkResult}
-        firstName={firstName}
-        setFirstName={setFirstName}
-        lastName={lastName}
-        setLastName={setLastName}
-        email={email}
-        setEmail={setEmail}
-        role={role}
-        setRole={setRole}
-        accountStatus={accountStatus}
-        setAccountStatus={setAccountStatus}
-        canEditUsers={canEditUsers}
-        canChangeRoles={canChangeRoles}
-        canSuspendUsers={canSuspendUsers}
-        formError={formError}
-        setFormError={setFormError}
-        deleteError={deleteError}
-        setDeleteError={setDeleteError}
-        creating={creating}
-        updating={updating}
-        deleting={deleting}
-        regenerating={regenerating}
-        loadingActivationLink={loadingActivationLink}
-        activationLinkUnavailable={activationLinkUnavailable}
-        activationLookupFailed={activationLookupFailed}
-        onSave={handleCreate}
-        onDelete={handleDelete}
-        onRegenerateActivation={confirmActivationLink}
-        onRetryActivationLookup={retryActivationLookup}
-        onRequestActivationRegeneration={requestActivationRegeneration}
+        createOpen={dialogs.createOpen}
+        setCreateOpen={dialogs.setCreateOpen}
+        editTarget={dialogs.editTarget}
+        setEditTarget={dialogs.setEditTarget}
+        deleteTarget={dialogs.deleteTarget}
+        setDeleteTarget={dialogs.setDeleteTarget}
+        activationTarget={dialogs.activationTarget}
+        setActivationTarget={dialogs.setActivationTarget}
+        activationLinkUser={dialogs.activationLinkUser}
+        setActivationLinkUser={dialogs.setActivationLinkUser}
+        linkResult={dialogs.linkResult}
+        setLinkResult={dialogs.setLinkResult}
+        firstName={dialogs.firstName}
+        setFirstName={dialogs.setFirstName}
+        lastName={dialogs.lastName}
+        setLastName={dialogs.setLastName}
+        email={dialogs.email}
+        setEmail={dialogs.setEmail}
+        role={dialogs.role}
+        setRole={dialogs.setRole}
+        accountStatus={dialogs.accountStatus}
+        setAccountStatus={dialogs.setAccountStatus}
+        canEditUsers={permissions.canEditUsers}
+        canChangeRoles={permissions.canChangeRoles}
+        canSuspendUsers={permissions.canSuspendUsers}
+        formError={dialogs.formError}
+        setFormError={dialogs.setFormError}
+        deleteError={dialogs.deleteError}
+        setDeleteError={dialogs.setDeleteError}
+        creating={actions.creating}
+        updating={actions.updating}
+        deleting={actions.deleting}
+        regenerating={actions.regenerating}
+        loadingActivationLink={actions.loadingActivationLink}
+        activationLinkUnavailable={dialogs.activationLinkUnavailable}
+        activationLookupFailed={dialogs.activationLookupFailed}
+        onSave={actions.saveUser}
+        onDelete={actions.deleteSelectedUser}
+        onRegenerateActivation={actions.regenerateActivationLink}
+        onRetryActivationLookup={actions.retryActivationLookup}
+        onRequestActivationRegeneration={actions.requestActivationRegeneration}
       />
     </div>
   );

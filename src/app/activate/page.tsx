@@ -10,6 +10,11 @@ import {
   RecoveryCodesCard,
 } from "@/components/auth/activation-status-cards";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  completeTenantActivation,
+  completeTenantActivationTotp,
+  validateTenantActivationToken,
+} from "@/lib/auth/session-actions";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState, type FormEvent } from "react";
 
@@ -49,22 +54,13 @@ function ActivateForm() {
         setValidating(false);
         return;
       }
-      const response = await fetch(
-        `/auth/activate/validate?token=${encodeURIComponent(token)}`,
-        { cache: "no-store" },
-      );
+      const result = await validateTenantActivationToken(token);
       setValidating(false);
-      if (!response.ok) {
+      if (!result.ok) {
         setValid(false);
         return;
       }
-      const payload = (await response.json()) as {
-        valid?: boolean;
-        expiresAt?: string;
-        email?: string;
-        firstName?: string;
-        lastName?: string;
-      };
+      const payload = result.payload;
       setValid(!!payload.valid);
       setExpiresAt(payload.expiresAt ?? null);
       setEmail(payload.email ?? "");
@@ -79,32 +75,22 @@ function ActivateForm() {
     setLoading(true);
     setError(null);
 
-    const response = await fetch("/auth/activate/complete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        token,
-        username,
-        password,
-        confirmPassword,
-      }),
+    const result = await completeTenantActivation({
+      token,
+      username,
+      password,
+      confirmPassword,
     });
-    const payload = (await response.json()) as {
-      error?: string;
-      challengeToken?: string;
-      qrCodeDataUrl?: string;
-      manualEntryKey?: string;
-    };
     setLoading(false);
 
-    if (!response.ok || !payload.challengeToken) {
-      setError(payload.error ?? "Activation failed");
+    if (!result.ok || typeof result.payload.challengeToken !== "string") {
+      setError(result.ok ? "Activation failed" : result.error);
       return;
     }
 
-    setChallengeToken(payload.challengeToken);
-    setQrCodeDataUrl(payload.qrCodeDataUrl ?? null);
-    setManualEntryKey(payload.manualEntryKey ?? null);
+    setChallengeToken(result.payload.challengeToken);
+    setQrCodeDataUrl(result.payload.qrCodeDataUrl ?? null);
+    setManualEntryKey(result.payload.manualEntryKey ?? null);
     setCode("");
     setStep("totp");
   }
@@ -114,26 +100,18 @@ function ActivateForm() {
     setLoading(true);
     setError(null);
 
-    const response = await fetch("/auth/activate/totp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        challengeToken,
-        code,
-      }),
+    const result = await completeTenantActivationTotp({
+      challengeToken,
+      code,
     });
-    const payload = (await response.json()) as {
-      error?: string;
-      recoveryCodes?: string[];
-    };
     setLoading(false);
 
-    if (!response.ok) {
-      setError(payload.error ?? "Verification failed");
+    if (!result.ok) {
+      setError(result.error);
       return;
     }
 
-    setRecoveryCodes(payload.recoveryCodes ?? []);
+    setRecoveryCodes(result.payload.recoveryCodes ?? []);
     setStep("recovery");
   }
 

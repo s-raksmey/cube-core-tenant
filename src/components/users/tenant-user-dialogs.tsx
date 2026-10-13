@@ -15,33 +15,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { SubTenantRole } from "@/lib/types";
-
-export type TenantUserEditTarget = {
-  id: string;
-  firstName: string | null;
-  lastName: string | null;
-  email: string;
-  role: SubTenantRole;
-  status: string | null;
-  membershipStatus: string | null;
-};
-
-export type TenantUserDeleteTarget = {
-  id: string;
-  username: string | null;
-  email: string;
-  role: string;
-};
-
-export type TenantUserLinkTarget = {
-  id: string;
-  email: string;
-  username: string | null;
-  firstName: string | null;
-  lastName: string | null;
-};
-
-type LinkResult = { url: string; expiresAt: string; label: string };
+import type {
+  TenantUserDeleteTarget,
+  TenantUserEditTarget,
+  TenantUserLinkResult,
+  TenantUserLinkTarget,
+} from "@/types/tenant-user.types";
 
 type TenantUserDialogsProps = {
   viewerId: string;
@@ -55,8 +34,8 @@ type TenantUserDialogsProps = {
   setActivationTarget: Dispatch<SetStateAction<TenantUserLinkTarget | null>>;
   activationLinkUser: TenantUserLinkTarget | null;
   setActivationLinkUser: Dispatch<SetStateAction<TenantUserLinkTarget | null>>;
-  linkResult: LinkResult | null;
-  setLinkResult: Dispatch<SetStateAction<LinkResult | null>>;
+  linkResult: TenantUserLinkResult | null;
+  setLinkResult: Dispatch<SetStateAction<TenantUserLinkResult | null>>;
   firstName: string;
   setFirstName: Dispatch<SetStateAction<string>>;
   lastName: string;
