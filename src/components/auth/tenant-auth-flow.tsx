@@ -1,25 +1,16 @@
 "use client";
 
-import { ArrowRight, X } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { PasswordField } from "@/components/auth/password-field";
+import { TenantAuthCard, type TenantAuthChallenge, type TenantAuthStep } from "@/components/auth/tenant-auth-card";
 import type { AuthUser } from "@/lib/types";
 
-type Step = "landing" | "password" | "enroll" | "verify";
-
-type ChallengeState = {
-  challengeToken: string;
-  nextStep: "TOTP_ENROLL" | "TOTP_VERIFY";
-  qrCodeDataUrl?: string;
-  manualEntryKey?: string;
-};
+type Step = TenantAuthStep;
+type ChallengeState = TenantAuthChallenge;
 
 function requiresFreshLogin(message: string) {
   return /locked|challenge expired|challenge already used|invalid sign-in challenge|enrollment expired/i.test(
@@ -228,145 +219,24 @@ export function TenantAuthFlow({
           </Button>
         </div>
       ) : (
-      <Card className="w-full max-w-md border-border bg-card/95 shadow-sm backdrop-blur">
-        <CardHeader className="flex flex-row items-start justify-between gap-3">
-          <div>
-            <CardTitle className="text-xl">
-              {`Sign in to ${tenantName}`}
-            </CardTitle>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Sub-tenant Admin or Editor sign-in with mandatory
-              two-factor authentication.
-            </p>
-          </div>
-          <Button type="button" variant="ghost" size="icon-sm" onClick={closeForm} disabled={loading} aria-label="Close sign-in form">
-            <X className="size-4" />
-          </Button>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {activeStep === "password" ? (
-            <form className="space-y-4" onSubmit={onPasswordSubmit}>
-              <div className="space-y-1.5">
-                <Label htmlFor="email">Username or email</Label>
-                <Input
-                  id="email"
-                  type="text"
-                  autoComplete="username"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={loading}
-                />
-              </div>
-              <PasswordField
-                id="password"
-                value={password}
-                onChange={setPassword}
-                disabled={loading}
-              />
-              {error ? <p className="text-sm text-destructive">{error}</p> : null}
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Continuing…" : "Continue"}
-              </Button>
-            </form>
-          ) : null}
-
-          {activeStep === "enroll" ? (
-            <form className="space-y-4" onSubmit={onVerifySubmit}>
-              {challenge?.qrCodeDataUrl ? (
-                <div className="flex justify-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={challenge.qrCodeDataUrl}
-                    alt="QR code"
-                    className="size-44"
-                  />
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Preparing authenticator setup…
-                </p>
-              )}
-              {challenge?.manualEntryKey ? (
-                <div className="space-y-1">
-                  <Label>Manual setup key</Label>
-                  <p className="break-all rounded-md bg-muted px-3 py-2 font-mono text-xs">
-                    {challenge.manualEntryKey}
-                  </p>
-                </div>
-              ) : null}
-              <div className="space-y-1.5">
-                <Label htmlFor="code">6-digit code</Label>
-                <Input
-                  id="code"
-                  inputMode="numeric"
-                  maxLength={6}
-                  value={code}
-                  onChange={(e) => {
-                    setError(null);
-                    autoSubmitRef.current = false;
-                    setCode(e.target.value.replace(/\D/g, "").slice(0, 6));
-                  }}
-                  required
-                  autoFocus
-                  disabled={loading}
-                />
-              </div>
-              {error ? <p className="text-sm text-destructive">{error}</p> : null}
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Signing you in…" : "Activate 2FA"}
-              </Button>
-            </form>
-          ) : null}
-
-          {activeStep === "verify" ? (
-            <form className="space-y-4" onSubmit={onVerifySubmit}>
-              <div className="space-y-1.5">
-                <Label htmlFor="verify">
-                  {useRecoveryCode ? "Recovery code" : "6-digit code"}
-                </Label>
-                <Input
-                  id="verify"
-                  inputMode={useRecoveryCode ? "text" : "numeric"}
-                  maxLength={useRecoveryCode ? 64 : 6}
-                  value={code}
-                  onChange={(e) => {
-                    setError(null);
-                    autoSubmitRef.current = false;
-                    setCode(
-                      useRecoveryCode
-                        ? e.target.value.trim().toUpperCase()
-                        : e.target.value.replace(/\D/g, "").slice(0, 6),
-                    );
-                  }}
-                  required
-                  autoFocus
-                  disabled={loading}
-                />
-              </div>
-              <button
-                type="button"
-                className="text-sm text-primary hover:underline disabled:opacity-50"
-                disabled={loading}
-                onClick={() => {
-                  setUseRecoveryCode((v) => !v);
-                  setCode("");
-                  setError(null);
-                  autoSubmitRef.current = false;
-                }}
-              >
-                {useRecoveryCode
-                  ? "Use authenticator code instead"
-                  : "Use a recovery code"}
-              </button>
-              {error ? <p className="text-sm text-destructive">{error}</p> : null}
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Signing you in…" : "Verify"}
-              </Button>
-            </form>
-          ) : null}
-        </CardContent>
-      </Card>
+      <TenantAuthCard
+        tenantName={tenantName}
+        step={activeStep}
+        email={email}
+        password={password}
+        code={code}
+        useRecoveryCode={useRecoveryCode}
+        challenge={challenge}
+        error={error}
+        loading={loading}
+        onClose={closeForm}
+        onPasswordSubmit={onPasswordSubmit}
+        onVerifySubmit={onVerifySubmit}
+        onEmailChange={setEmail}
+        onPasswordChange={setPassword}
+        onCodeChange={(value) => { setError(null); autoSubmitRef.current = false; setCode(value); }}
+        onToggleRecoveryCode={() => { setUseRecoveryCode((value) => !value); setCode(""); setError(null); autoSubmitRef.current = false; }}
+      />
       )}
         </section>
         <section className="relative mx-auto flex w-full max-w-xl items-center justify-center lg:max-w-none">

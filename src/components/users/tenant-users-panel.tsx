@@ -2,28 +2,25 @@
 
 import { useMemo, useState } from "react";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client/react";
-import { Plus, Search } from "lucide-react";
 import {
   CREATE_TENANT_USER,
   DELETE_TENANT_USER,
   GENERATE_TENANT_USER_ACTIVATION,
   GENERATE_TENANT_USER_PASSWORD_RESET,
   TENANT_USER_ACTIVATION_LINK,
-  TENANT_USER_PERMISSIONS_QUERY,
   UPDATE_TENANT_USER,
   TENANT_USERS_QUERY,
 } from "@/lib/apollo/operations";
 import type { AuthUser, SubTenantRole } from "@/lib/types";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useTenantUserPermissions } from "@/hooks/use-tenant-user-permissions";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { TenantUserListToolbar } from "@/components/users/tenant-user-list-toolbar";
 import { TenantUsersTable, type TenantUserRow } from "@/components/users/tenant-users-table";
 import {
   TenantUserDialogs,
-  type TenantUserDeleteTarget,
-  type TenantUserEditTarget,
   type TenantUserLinkTarget,
 } from "@/components/users/tenant-user-dialogs";
+import { useTenantUserDialogState } from "@/components/users/use-tenant-user-dialog-state";
 
 export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
   const [searchInput, setSearchInput] = useState("");
@@ -31,19 +28,7 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  const { data: permissionsData, loading: loadingPermissions, error: permissionsError } = useQuery(
-    TENANT_USER_PERMISSIONS_QUERY,
-    { fetchPolicy: "cache-and-network" },
-  );
-  const tenantPermissions = new Set(permissionsData?.tenantUserPermissions ?? []);
-  const canViewUsers = tenantPermissions.has("USERS_VIEW");
-  const canCreateUsers = tenantPermissions.has("USERS_CREATE");
-  const canEditUsers = tenantPermissions.has("USERS_EDIT");
-  const canChangeRoles = tenantPermissions.has("USERS_CHANGE_ROLE");
-  const canActivateUsers = tenantPermissions.has("USERS_ACTIVATE");
-  const canResetPasswords = tenantPermissions.has("USERS_RESET_PASSWORD");
-  const canSuspendUsers = tenantPermissions.has("USERS_SUSPEND");
-  const canDeleteUsers = tenantPermissions.has("USERS_DELETE");
+  const { loading: loadingPermissions, error: permissionsError, canViewUsers, canCreateUsers, canEditUsers, canChangeRoles, canActivateUsers, canResetPasswords, canSuspendUsers, canDeleteUsers } = useTenantUserPermissions("cache-and-network");
 
   const { data, loading, error, refetch } = useQuery(TENANT_USERS_QUERY, {
     variables: { search: search || null, page, pageSize },
@@ -60,25 +45,7 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
     TENANT_USER_ACTIVATION_LINK,
     { fetchPolicy: "no-cache" },
   );
-  const [createOpen, setCreateOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<TenantUserEditTarget | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<TenantUserDeleteTarget | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState<SubTenantRole>("EDITOR");
-  const [accountStatus, setAccountStatus] = useState<"ACTIVE" | "INACTIVE">("ACTIVE");
-  const [formError, setFormError] = useState<string | null>(null);
-  const [linkResult, setLinkResult] = useState<{
-    url: string;
-    expiresAt: string;
-    label: string;
-  } | null>(null);
-  const [activationTarget, setActivationTarget] = useState<TenantUserLinkTarget | null>(null);
-  const [activationLinkUser, setActivationLinkUser] = useState<TenantUserLinkTarget | null>(null);
-  const [activationLinkUnavailable, setActivationLinkUnavailable] = useState(false);
-  const [activationLookupFailed, setActivationLookupFailed] = useState(false);
+  const { createOpen, setCreateOpen, editTarget, setEditTarget, deleteTarget, setDeleteTarget, deleteError, setDeleteError, firstName, setFirstName, lastName, setLastName, email, setEmail, role, setRole, accountStatus, setAccountStatus, formError, setFormError, linkResult, setLinkResult, activationTarget, setActivationTarget, activationLinkUser, setActivationLinkUser, activationLinkUnavailable, setActivationLinkUnavailable, activationLookupFailed, setActivationLookupFailed, openCreate, openEdit } = useTenantUserDialogState();
 
   const pageData = data?.tenantUsers;
   const users = pageData?.items ?? [];
@@ -227,53 +194,13 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex w-full max-w-md gap-2">
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  setPage(1);
-                  setSearch(searchInput.trim());
-                }
-              }}
-              placeholder="Search by name, username, or email"
-              className="pl-9"
-            />
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              setPage(1);
-              setSearch(searchInput.trim());
-            }}
-          >
-            Search
-          </Button>
-        </div>
-        {canCreateUsers ? (
-          <Button
-            type="button"
-            onClick={() => {
-              setFirstName("");
-              setLastName("");
-              setEmail("");
-              setRole(canChangeRoles ? "ADMIN" : "EDITOR");
-              setAccountStatus("ACTIVE");
-              setFormError(null);
-              setEditTarget(null);
-              setCreateOpen(true);
-            }}
-          >
-            <Plus className="size-4" />
-            Create User
-          </Button>
-        ) : null}
-      </div>
+      <TenantUserListToolbar
+        searchInput={searchInput}
+        canCreateUsers={canCreateUsers}
+        onSearchInputChange={setSearchInput}
+        onSearch={() => { setPage(1); setSearch(searchInput.trim()); }}
+        onCreate={() => openCreate(canChangeRoles)}
+      />
 
       {loadingPermissions ? (
         <p className="text-sm text-muted-foreground">Loading permissions…</p>
@@ -312,24 +239,7 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
           totalPages={totalPages}
           total={total}
           onPageChange={setPage}
-          onEdit={(user) => {
-            setEditTarget({
-              id: user.id,
-              firstName: user.firstName ?? null,
-              lastName: user.lastName ?? null,
-              email: user.email,
-              role: user.role as SubTenantRole,
-              status: user.status,
-              membershipStatus: user.membershipStatus,
-            });
-            setFirstName(user.firstName ?? "");
-            setLastName(user.lastName ?? "");
-            setEmail(user.email);
-            setRole(user.role as SubTenantRole);
-            setAccountStatus(user.membershipStatus === "DISABLED" ? "INACTIVE" : "ACTIVE");
-            setFormError(null);
-            setCreateOpen(true);
-          }}
+          onEdit={(user) => openEdit({ id: user.id, firstName: user.firstName ?? null, lastName: user.lastName ?? null, email: user.email, role: user.role as SubTenantRole, status: user.status, membershipStatus: user.membershipStatus })}
           onActivation={(user) => void viewActivationLink(user)}
           onResetPassword={(user) => void showPasswordResetLink(user)}
           onDelete={(user) => {
