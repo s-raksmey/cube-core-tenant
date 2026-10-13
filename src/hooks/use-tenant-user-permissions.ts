@@ -1,5 +1,5 @@
-import { useQuery } from "@apollo/client/react";
 import { TENANT_USER_PERMISSIONS_QUERY } from "@/lib/apollo/operations";
+import { useQuery } from "@apollo/client/react";
 
 /** Loads tenant permissions once and exposes them as named capabilities. */
 export function useTenantUserPermissions() {

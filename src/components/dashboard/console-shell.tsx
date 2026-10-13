@@ -1,9 +1,5 @@
 "use client";
 
-import { useEffect, type CSSProperties } from "react";
-import { LogOut } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
-import { useApolloClient } from "@apollo/client/react";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -13,6 +9,10 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import type { AuthUser } from "@/lib/types";
+import { useApolloClient } from "@apollo/client/react";
+import { LogOut } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, type CSSProperties } from "react";
 
 export function ConsoleShell({
   user,
@@ -39,7 +39,9 @@ export function ConsoleShell({
   }
 
   return (
-    <SidebarProvider style={{ "--sidebar-width-icon": "2.75rem" } as CSSProperties}>
+    <SidebarProvider
+      style={{ "--sidebar-width-icon": "2.75rem" } as CSSProperties}
+    >
       <AppSidebar user={user} />
       <SidebarInset>
         <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-card/90 px-4 backdrop-blur">

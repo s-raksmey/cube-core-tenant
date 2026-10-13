@@ -1,8 +1,6 @@
-import { NextResponse } from "next/server";
-import { print } from "graphql";
 import { RefreshSessionDocument } from "@/lib/apollo/generated/graphql";
-import { TENANT_AUDIENCE, authServerBaseUrl } from "@/lib/auth/console";
 import { isAccessTokenUsable } from "@/lib/auth/access-token";
+import { TENANT_AUDIENCE, authServerBaseUrl } from "@/lib/auth/console";
 import {
   applyAuthCookies,
   clearAuthCookies,
@@ -10,6 +8,8 @@ import {
   readRefreshToken,
 } from "@/lib/auth/cookies";
 import { managementHostFromRequest } from "@/lib/tenant-hostname";
+import { print } from "graphql";
+import { NextResponse } from "next/server";
 
 // Branding images are capped at 1,000 KB by the API. GraphQL carries them as
 // Base64, which adds roughly one third to the request size.
@@ -137,25 +137,48 @@ export async function POST(request: Request) {
     (origin && origin !== new URL(request.url).origin) ||
     fetchSite === "cross-site"
   ) {
-    return NextResponse.json({ errors: [{ message: "Cross-origin GraphQL request rejected" }] }, { status: 403 });
+    return NextResponse.json(
+      { errors: [{ message: "Cross-origin GraphQL request rejected" }] },
+      { status: 403 },
+    );
   }
   const contentType = request.headers.get("content-type") ?? "";
-  if (contentType.split(";", 1)[0].trim().toLowerCase() !== "application/json") {
-    return NextResponse.json({ errors: [{ message: "GraphQL requests must use application/json" }] }, { status: 415 });
+  if (
+    contentType.split(";", 1)[0].trim().toLowerCase() !== "application/json"
+  ) {
+    return NextResponse.json(
+      { errors: [{ message: "GraphQL requests must use application/json" }] },
+      { status: 415 },
+    );
   }
-  if (Number(request.headers.get("content-length") ?? 0) > MAX_GRAPHQL_BODY_BYTES) {
-    return NextResponse.json({ errors: [{ message: "GraphQL request is too large" }] }, { status: 413 });
+  if (
+    Number(request.headers.get("content-length") ?? 0) > MAX_GRAPHQL_BODY_BYTES
+  ) {
+    return NextResponse.json(
+      { errors: [{ message: "GraphQL request is too large" }] },
+      { status: 413 },
+    );
   }
   const body = await readBodyWithinLimit(request);
   if (body === null) {
-    return NextResponse.json({ errors: [{ message: "GraphQL request is too large" }] }, { status: 413 });
+    return NextResponse.json(
+      { errors: [{ message: "GraphQL request is too large" }] },
+      { status: 413 },
+    );
   }
 
-  const { accessToken, nextRefreshToken, shouldSetCookies, shouldClearCookies } =
-    await resolveAccessToken();
+  const {
+    accessToken,
+    nextRefreshToken,
+    shouldSetCookies,
+    shouldClearCookies,
+  } = await resolveAccessToken();
   const managementHost = managementHostFromRequest(request);
   if (managementHost.kind === "invalid") {
-    return NextResponse.json({ errors: [{ message: "Invalid tenant console host" }] }, { status: 400 });
+    return NextResponse.json(
+      { errors: [{ message: "Invalid tenant console host" }] },
+      { status: 400 },
+    );
   }
   const serverUrl = `${authServerBaseUrl()}/graphql`;
 
@@ -175,14 +198,18 @@ export async function POST(request: Request) {
       signal: AbortSignal.timeout(15_000),
     });
   } catch {
-    return NextResponse.json({ errors: [{ message: "GraphQL service unavailable" }] }, { status: 502 });
+    return NextResponse.json(
+      { errors: [{ message: "GraphQL service unavailable" }] },
+      { status: 502 },
+    );
   }
 
   const text = await upstream.text();
   const response = new NextResponse(text, {
     status: upstream.status,
     headers: {
-      "Content-Type": upstream.headers.get("content-type") ?? "application/json",
+      "Content-Type":
+        upstream.headers.get("content-type") ?? "application/json",
       "Cache-Control": "no-store",
     },
   });
@@ -209,9 +236,11 @@ function hasUnauthenticatedError(responseText: string) {
     const payload = JSON.parse(responseText) as {
       errors?: { extensions?: { code?: string } }[];
     };
-    return payload.errors?.some(
-      (error) => error.extensions?.code === "UNAUTHENTICATED",
-    ) ?? false;
+    return (
+      payload.errors?.some(
+        (error) => error.extensions?.code === "UNAUTHENTICATED",
+      ) ?? false
+    );
   } catch {
     return false;
   }

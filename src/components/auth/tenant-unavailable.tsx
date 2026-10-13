@@ -14,7 +14,8 @@ export function TenantUnavailable() {
           </p>
           {process.env.NODE_ENV !== "production" ? (
             <p className="mt-3 text-sm text-muted-foreground">
-              For local development, ask a SuperAdmin to assign localhost to an active tenant in Tenant Management.
+              For local development, ask a SuperAdmin to assign localhost to an
+              active tenant in Tenant Management.
             </p>
           ) : null}
         </CardContent>

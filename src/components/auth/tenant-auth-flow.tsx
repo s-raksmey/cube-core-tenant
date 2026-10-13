@@ -1,13 +1,17 @@
 "use client";
 
+import {
+  TenantAuthCard,
+  type TenantAuthChallenge,
+  type TenantAuthStep,
+} from "@/components/auth/tenant-auth-card";
+import { Button } from "@/components/ui/button";
+import type { AuthUser } from "@/lib/types";
 import { ArrowRight } from "lucide-react";
-import { useEffect, useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { TenantAuthCard, type TenantAuthChallenge, type TenantAuthStep } from "@/components/auth/tenant-auth-card";
-import type { AuthUser } from "@/lib/types";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
 type Step = TenantAuthStep;
 type ChallengeState = TenantAuthChallenge;
@@ -177,8 +181,14 @@ export function TenantAuthFlow({
 
   return (
     <div className="relative min-h-svh overflow-hidden bg-background">
-      <div aria-hidden className="pointer-events-none absolute -left-24 top-20 size-72 rounded-full bg-primary/10 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute -right-16 bottom-10 size-80 rounded-full bg-primary/5 blur-3xl" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-24 top-20 size-72 rounded-full bg-primary/10 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-16 bottom-10 size-80 rounded-full bg-primary/5 blur-3xl"
+      />
       <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center gap-3 px-6 py-5">
         {logoUrl ? (
           <Image
@@ -192,7 +202,12 @@ export function TenantAuthFlow({
           />
         ) : (
           <div className="flex size-11 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
-            {tenantName.split(/\s+/).map((part) => part[0]).slice(0, 2).join("").toUpperCase()}
+            {tenantName
+              .split(/\s+/)
+              .map((part) => part[0])
+              .slice(0, 2)
+              .join("")
+              .toUpperCase()}
           </div>
         )}
         <span className="text-sm font-semibold text-foreground sm:text-base">
@@ -201,47 +216,79 @@ export function TenantAuthFlow({
       </header>
       <main className="relative z-10 mx-auto grid min-h-[calc(100svh-5.5rem)] w-full max-w-6xl items-center gap-10 px-6 pb-16 pt-6 lg:grid-cols-[1.05fr_0.95fr]">
         <section className="w-full max-w-xl">
-      {activeStep === "landing" ? (
-        <div className="space-y-6">
-          <p className="text-sm font-medium text-primary">{tenantName} workspace</p>
-          <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-            <span className="block">Create. Manage.</span>
-            <span className="block whitespace-nowrap text-primary">Publish with Ease.</span>
-          </h1>
-          <p className="max-w-lg text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Secure workspace access for {tenantName} Admin and Editor users.
-          </p>
-          <Button size="lg" asChild>
-            <Link href="/login" prefetch>
-              Get Started
-              <ArrowRight className="size-4" />
-            </Link>
-          </Button>
-        </div>
-      ) : (
-      <TenantAuthCard
-        tenantName={tenantName}
-        step={activeStep}
-        email={email}
-        password={password}
-        code={code}
-        useRecoveryCode={useRecoveryCode}
-        challenge={challenge}
-        error={error}
-        loading={loading}
-        onClose={closeForm}
-        onPasswordSubmit={onPasswordSubmit}
-        onVerifySubmit={onVerifySubmit}
-        onEmailChange={setEmail}
-        onPasswordChange={setPassword}
-        onCodeChange={(value) => { setError(null); autoSubmitRef.current = false; setCode(value); }}
-        onToggleRecoveryCode={() => { setUseRecoveryCode((value) => !value); setCode(""); setError(null); autoSubmitRef.current = false; }}
-      />
-      )}
+          {activeStep === "landing" ? (
+            <div className="space-y-6">
+              <p className="text-sm font-medium text-primary">
+                {tenantName} workspace
+              </p>
+              <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+                <span className="block">Create. Manage.</span>
+                <span className="block whitespace-nowrap text-primary">
+                  Publish with Ease.
+                </span>
+              </h1>
+              <p className="max-w-lg text-base leading-relaxed text-muted-foreground sm:text-lg">
+                Secure workspace access for {tenantName} Admin and Editor users.
+              </p>
+              <Button size="lg" asChild>
+                <Link href="/login" prefetch>
+                  Get Started
+                  <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <TenantAuthCard
+              tenantName={tenantName}
+              step={activeStep}
+              email={email}
+              password={password}
+              code={code}
+              useRecoveryCode={useRecoveryCode}
+              challenge={challenge}
+              error={error}
+              loading={loading}
+              onClose={closeForm}
+              onPasswordSubmit={onPasswordSubmit}
+              onVerifySubmit={onVerifySubmit}
+              onEmailChange={setEmail}
+              onPasswordChange={setPassword}
+              onCodeChange={(value) => {
+                setError(null);
+                autoSubmitRef.current = false;
+                setCode(value);
+              }}
+              onToggleRecoveryCode={() => {
+                setUseRecoveryCode((value) => !value);
+                setCode("");
+                setError(null);
+                autoSubmitRef.current = false;
+              }}
+            />
+          )}
         </section>
         <section className="relative mx-auto flex w-full max-w-xl items-center justify-center lg:max-w-none">
           <div className="relative aspect-square w-full max-w-110">
-            {logoUrl ? <Image src={logoUrl} alt={`${tenantName} logo`} fill unoptimized priority className="object-contain" sizes="(max-width: 1024px) 75vw, 440px" /> : <div className="flex size-full items-center justify-center rounded-full bg-primary/10 text-7xl font-semibold text-primary">{tenantName.split(/\s+/).map((part) => part[0]).slice(0, 2).join("").toUpperCase()}</div>}
+            {logoUrl ? (
+              <Image
+                src={logoUrl}
+                alt={`${tenantName} logo`}
+                fill
+                unoptimized
+                priority
+                className="object-contain"
+                sizes="(max-width: 1024px) 75vw, 440px"
+              />
+            ) : (
+              <div className="flex size-full items-center justify-center rounded-full bg-primary/10 text-7xl font-semibold text-primary">
+                {tenantName
+                  .split(/\s+/)
+                  .map((part) => part[0])
+                  .slice(0, 2)
+                  .join("")
+                  .toUpperCase()}
+              </div>
+            )}
           </div>
         </section>
       </main>

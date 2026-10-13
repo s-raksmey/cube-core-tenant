@@ -33,7 +33,8 @@ export function TenantLandingHero({ user }: { user: AuthUser }) {
     myTenantBranding: { managementLogoUrl: string | null };
   }>(MY_MANAGEMENT_BRANDING);
   const logo = data?.myTenantBranding.managementLogoUrl;
-  const roleLabel = user.role === "ADMIN" ? "Tenant administration" : "Editor workspace";
+  const roleLabel =
+    user.role === "ADMIN" ? "Tenant administration" : "Editor workspace";
 
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-card">

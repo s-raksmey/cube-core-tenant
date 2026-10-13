@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { useQuery } from "@apollo/client/react";
-import { ME_QUERY } from "@/lib/apollo/operations";
 import { ConsoleShell } from "@/components/dashboard/console-shell";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ME_QUERY } from "@/lib/apollo/operations";
 import type { AuthUser } from "@/lib/types";
+import { useQuery } from "@apollo/client/react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
 
 function isTenantRole(user: AuthUser) {
   return (

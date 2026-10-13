@@ -12,9 +12,8 @@ export const activationTotpSchema = z.object({
   code: z.string().regex(/^\d{6}$/),
 });
 
-export const passwordResetSchema = z
-  .object({
-    token: z.string().min(1),
-    password: z.string().min(1),
-    confirmPassword: z.string().min(1),
-  });
+export const passwordResetSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(1),
+  confirmPassword: z.string().min(1),
+});

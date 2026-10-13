@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
-import { z } from "zod";
 import { TENANT_AUDIENCE } from "@/lib/auth/console";
 import { applyAuthCookies } from "@/lib/auth/cookies";
 import { verifyLoginTotp } from "@/lib/auth/upstream";
+import { NextResponse } from "next/server";
+import { z } from "zod";
 
 const bodySchema = z.object({
   challengeToken: z.string().min(1),
@@ -13,7 +13,10 @@ export async function POST(request: Request) {
   const raw = await request.json();
   const parsed = bodySchema.safeParse(raw);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid verification code" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid verification code" },
+      { status: 400 },
+    );
   }
 
   try {

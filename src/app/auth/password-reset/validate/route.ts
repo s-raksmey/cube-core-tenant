@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { validatePasswordResetToken } from "@/lib/auth/upstream";
+import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
   const token = new URL(request.url).searchParams.get("token") ?? "";

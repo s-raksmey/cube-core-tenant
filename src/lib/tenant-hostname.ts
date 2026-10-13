@@ -1,8 +1,8 @@
 import "server-only";
 
 import {
-  TenantByHostnameDocument,
   LocalDevelopmentTenantDocument,
+  TenantByHostnameDocument,
 } from "@/lib/apollo/generated/graphql";
 import { serverGraphql } from "@/lib/auth/graphql";
 
@@ -63,4 +63,3 @@ export async function resolveTenantByHostname(hostname: string) {
   if (!result.ok) throw new Error("Unable to resolve the management domain");
   return result.payload;
 }
-

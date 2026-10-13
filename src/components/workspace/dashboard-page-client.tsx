@@ -1,11 +1,11 @@
 "use client";
 
-import { useQuery } from "@apollo/client/react";
-import { ME_QUERY } from "@/lib/apollo/operations";
 import { AdminDashboard } from "@/components/dashboard/admin-dashboard";
 import { EditorDashboard } from "@/components/dashboard/editor-dashboard";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ME_QUERY } from "@/lib/apollo/operations";
+import { useQuery } from "@apollo/client/react";
 
 export function DashboardPageClient() {
   const { data, loading } = useQuery(ME_QUERY);
@@ -35,5 +35,9 @@ export function DashboardPageClient() {
     );
   }
 
-  return user.role === "ADMIN" ? <AdminDashboard user={user} /> : <EditorDashboard user={user} />;
+  return user.role === "ADMIN" ? (
+    <AdminDashboard user={user} />
+  ) : (
+    <EditorDashboard user={user} />
+  );
 }

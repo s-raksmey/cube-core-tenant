@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import type { ConsoleAudience } from "@/lib/auth/console";
+import { NextResponse } from "next/server";
 
 const REFRESH_BY_AUDIENCE: Record<ConsoleAudience, string> = {
   ADMIN_CONSOLE: "management_console_admin_session",
@@ -20,13 +20,17 @@ export function applyAuthCookies(
   },
 ) {
   const secure = process.env.NODE_ENV === "production";
-  response.cookies.set(REFRESH_BY_AUDIENCE[input.audience], input.refreshToken, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure,
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30,
-  });
+  response.cookies.set(
+    REFRESH_BY_AUDIENCE[input.audience],
+    input.refreshToken,
+    {
+      httpOnly: true,
+      sameSite: "lax",
+      secure,
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30,
+    },
+  );
   response.cookies.set(ACCESS_BY_AUDIENCE[input.audience], input.accessToken, {
     httpOnly: true,
     sameSite: "lax",
@@ -36,7 +40,10 @@ export function applyAuthCookies(
   });
 }
 
-export function clearAuthCookies(response: NextResponse, audience: ConsoleAudience) {
+export function clearAuthCookies(
+  response: NextResponse,
+  audience: ConsoleAudience,
+) {
   const secure = process.env.NODE_ENV === "production";
   for (const name of [
     REFRESH_BY_AUDIENCE[audience],

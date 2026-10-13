@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+import type { ReactNode } from "react";
 
 type CenteredCardProps = {
   children: ReactNode;
@@ -76,7 +76,9 @@ export function RecoveryCodesCard({
             type="button"
             variant="outline"
             className="w-full"
-            onClick={() => void navigator.clipboard.writeText(recoveryCodes.join("\n"))}
+            onClick={() =>
+              void navigator.clipboard.writeText(recoveryCodes.join("\n"))
+            }
           >
             Copy codes
           </Button>
@@ -88,4 +90,3 @@ export function RecoveryCodesCard({
     </div>
   );
 }
-

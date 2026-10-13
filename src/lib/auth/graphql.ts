@@ -1,8 +1,8 @@
 import "server-only";
 
+import { authServerBaseUrl } from "@/lib/auth/console";
 import type { TypedDocumentNode } from "@apollo/client";
 import { print } from "graphql";
-import { authServerBaseUrl } from "@/lib/auth/console";
 
 type GraphqlResult<TPayload> =
   | { ok: true; status: 200; payload: TPayload }

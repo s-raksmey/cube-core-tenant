@@ -1,20 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import Image from "next/image";
-import { gql } from "@apollo/client";
-import { useQuery } from "@apollo/client/react";
-import { usePathname } from "next/navigation";
-import { useEffect } from "react";
-import {
-  Activity,
-  FileText,
-  ImageIcon,
-  LayoutDashboard,
-  Settings,
-  ShieldCheck,
-  Users,
-} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import {
   Sidebar,
   SidebarContent,
@@ -27,12 +13,35 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Badge } from "@/components/ui/badge";
-import type { AuthUser } from "@/lib/types";
 import { TENANT_USER_PERMISSIONS_QUERY } from "@/lib/apollo/operations";
+import type { AuthUser } from "@/lib/types";
+import { gql } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
+import {
+  Activity,
+  FileText,
+  ImageIcon,
+  LayoutDashboard,
+  Settings,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 
-const MY_BRANDING = gql`query SidebarBranding { myTenantBranding { managementLogoUrl faviconUrl } }`;
-const storageBase = process.env.NEXT_PUBLIC_GRAPHQL_SERVER_URL?.replace(/\/graphql$/, "") ?? "http://localhost:4000";
+const MY_BRANDING = gql`
+  query SidebarBranding {
+    myTenantBranding {
+      managementLogoUrl
+      faviconUrl
+    }
+  }
+`;
+const storageBase =
+  process.env.NEXT_PUBLIC_GRAPHQL_SERVER_URL?.replace(/\/graphql$/, "") ??
+  "http://localhost:4000";
 
 function tenantAssetPath(path: string) {
   return `/tenant-assets/${path.replace(/^\/storage\//, "")}`;
@@ -99,20 +108,24 @@ const editorNav: NavItem[] = [
 ];
 
 function tenantInitials(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase() || "CC";
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase() || "CC"
+  );
 }
 
 export function AppSidebar({ user }: { user: AuthUser }) {
   const pathname = usePathname();
   const { data } = useQuery(TENANT_USER_PERMISSIONS_QUERY);
-  const canViewUsers = data?.tenantUserPermissions?.includes("USERS_VIEW") ?? false;
-  const canViewSettings = data?.tenantUserPermissions?.includes("BRANDING_VIEW") ?? false;
+  const canViewUsers =
+    data?.tenantUserPermissions?.includes("USERS_VIEW") ?? false;
+  const canViewSettings =
+    data?.tenantUserPermissions?.includes("BRANDING_VIEW") ?? false;
   const { data: brandingData, refetch: refetchBranding } = useQuery<{
     myTenantBranding: {
       managementLogoUrl: string | null;
@@ -129,7 +142,8 @@ export function AppSidebar({ user }: { user: AuthUser }) {
       void refetchBranding();
     };
     window.addEventListener("tenant-branding-updated", refreshBranding);
-    return () => window.removeEventListener("tenant-branding-updated", refreshBranding);
+    return () =>
+      window.removeEventListener("tenant-branding-updated", refreshBranding);
   }, [refetchBranding]);
   const items = (user.role === "EDITOR" ? editorNav : adminNav).filter(
     (item) =>
@@ -141,7 +155,18 @@ export function AppSidebar({ user }: { user: AuthUser }) {
     <Sidebar collapsible="icon">
       <SidebarHeader className="flex h-14 flex-row items-center border-b border-sidebar-border p-0 px-3 group-data-[collapsible=icon]:px-1.5">
         <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-sidebar-primary text-sm font-bold text-sidebar-primary-foreground">
-          {managementLogoUrl ? <Image src={`${storageBase}${managementLogoUrl}`} alt={`${user.tenant.name} logo`} width={32} height={32} unoptimized className="size-8 object-contain" /> : tenantInitials(user.tenant.name)}
+          {managementLogoUrl ? (
+            <Image
+              src={`${storageBase}${managementLogoUrl}`}
+              alt={`${user.tenant.name} logo`}
+              width={32}
+              height={32}
+              unoptimized
+              className="size-8 object-contain"
+            />
+          ) : (
+            tenantInitials(user.tenant.name)
+          )}
         </div>
       </SidebarHeader>
       <SidebarContent>

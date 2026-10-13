@@ -1,5 +1,15 @@
 import "server-only";
 
+import type {
+  CompleteActivationMutationVariables,
+  CompleteActivationTotpMutationVariables,
+  CompletePasswordResetMutationVariables,
+  ValidateActivationTokenQueryVariables,
+  ValidatePasswordResetTokenQueryVariables,
+  VerifyLoginTotpMutationVariables,
+  VerifyRecoveryCodeMutationVariables,
+  VerifyTotpEnrollmentMutationVariables,
+} from "@/lib/apollo/generated/graphql";
 import {
   CompleteActivationDocument,
   CompleteActivationTotpDocument,
@@ -12,16 +22,6 @@ import {
   VerifyLoginTotpDocument,
   VerifyRecoveryCodeDocument,
   VerifyTotpEnrollmentDocument,
-} from "@/lib/apollo/generated/graphql";
-import type {
-  CompleteActivationMutationVariables,
-  CompleteActivationTotpMutationVariables,
-  CompletePasswordResetMutationVariables,
-  ValidateActivationTokenQueryVariables,
-  ValidatePasswordResetTokenQueryVariables,
-  VerifyLoginTotpMutationVariables,
-  VerifyRecoveryCodeMutationVariables,
-  VerifyTotpEnrollmentMutationVariables,
 } from "@/lib/apollo/generated/graphql";
 import { TENANT_AUDIENCE, type ConsoleAudience } from "@/lib/auth/console";
 import { serverGraphql } from "@/lib/auth/graphql";
@@ -56,7 +56,9 @@ export async function loginWithPassword(input: {
   };
 }
 
-export async function verifyLoginTotp(variables: VerifyLoginTotpMutationVariables) {
+export async function verifyLoginTotp(
+  variables: VerifyLoginTotpMutationVariables,
+) {
   const result = await serverGraphql(
     VerifyLoginTotpDocument,
     variables,
@@ -78,7 +80,9 @@ export async function verifyTotpEnrollment(
   return result.payload;
 }
 
-export async function verifyRecoveryCode(variables: VerifyRecoveryCodeMutationVariables) {
+export async function verifyRecoveryCode(
+  variables: VerifyRecoveryCodeMutationVariables,
+) {
   const result = await serverGraphql(
     VerifyRecoveryCodeDocument,
     variables,
@@ -117,7 +121,9 @@ export function validateActivationToken(token: string) {
   );
 }
 
-export function completeActivation(variables: CompleteActivationMutationVariables) {
+export function completeActivation(
+  variables: CompleteActivationMutationVariables,
+) {
   return serverGraphql(
     CompleteActivationDocument,
     variables,

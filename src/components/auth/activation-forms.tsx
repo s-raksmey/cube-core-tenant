@@ -1,10 +1,10 @@
 "use client";
 
-import type { FormEvent } from "react";
+import { PasswordField } from "@/components/auth/password-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PasswordField } from "@/components/auth/password-field";
+import type { FormEvent } from "react";
 
 type CredentialsFormProps = {
   email: string;
@@ -35,7 +35,13 @@ export function ActivationCredentialsForm({
     <form className="space-y-4" onSubmit={onSubmit}>
       <div className="space-y-1.5">
         <Label htmlFor="activate-email">Email</Label>
-        <Input id="activate-email" type="email" value={email} readOnly disabled />
+        <Input
+          id="activate-email"
+          type="email"
+          value={email}
+          readOnly
+          disabled
+        />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="activate-username">Username</Label>
@@ -101,7 +107,11 @@ export function ActivationTotpForm({
       {qrCodeDataUrl ? (
         <div className="flex justify-center rounded-lg border border-border bg-background p-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={qrCodeDataUrl} alt="Authenticator QR code" className="size-48" />
+          <img
+            src={qrCodeDataUrl}
+            alt="Authenticator QR code"
+            className="size-48"
+          />
         </div>
       ) : null}
       {manualEntryKey ? (
@@ -121,7 +131,9 @@ export function ActivationTotpForm({
           pattern="[0-9]{6}"
           maxLength={6}
           value={code}
-          onChange={(event) => onCodeChange(event.target.value.replace(/\D/g, "").slice(0, 6))}
+          onChange={(event) =>
+            onCodeChange(event.target.value.replace(/\D/g, "").slice(0, 6))
+          }
           required
           autoFocus
         />
@@ -133,4 +145,3 @@ export function ActivationTotpForm({
     </form>
   );
 }
-

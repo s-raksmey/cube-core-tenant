@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
 import { TENANT_AUDIENCE } from "@/lib/auth/console";
 import { clearAuthCookies, readAccessToken } from "@/lib/auth/cookies";
 import { logoutSession } from "@/lib/auth/upstream";
+import { NextResponse } from "next/server";
 
 export async function POST() {
   const accessToken = await readAccessToken(TENANT_AUDIENCE);

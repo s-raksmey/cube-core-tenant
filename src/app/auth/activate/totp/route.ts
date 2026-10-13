@@ -1,11 +1,14 @@
-import { NextResponse } from "next/server";
 import { activationTotpSchema } from "@/lib/auth/request-schemas";
 import { completeActivationTotp } from "@/lib/auth/upstream";
+import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   const parsed = activationTotpSchema.safeParse(await request.json());
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid verification code" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid verification code" },
+      { status: 400 },
+    );
   }
   const result = await completeActivationTotp(parsed.data);
   return NextResponse.json(result.payload, {

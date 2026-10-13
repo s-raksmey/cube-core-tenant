@@ -1,26 +1,29 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useLazyQuery, useMutation, useQuery } from "@apollo/client/react";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import {
+  TenantUserDialogs,
+  type TenantUserLinkTarget,
+} from "@/components/users/tenant-user-dialogs";
+import { TenantUserListToolbar } from "@/components/users/tenant-user-list-toolbar";
+import {
+  TenantUsersTable,
+  type TenantUserRow,
+} from "@/components/users/tenant-users-table";
+import { useTenantUserDialogState } from "@/components/users/use-tenant-user-dialog-state";
+import { useTenantUserPermissions } from "@/hooks/use-tenant-user-permissions";
 import {
   CREATE_TENANT_USER,
   DELETE_TENANT_USER,
   GENERATE_TENANT_USER_ACTIVATION,
   GENERATE_TENANT_USER_PASSWORD_RESET,
   TENANT_USER_ACTIVATION_LINK,
-  UPDATE_TENANT_USER,
   TENANT_USERS_QUERY,
+  UPDATE_TENANT_USER,
 } from "@/lib/apollo/operations";
 import type { AuthUser, SubTenantRole } from "@/lib/types";
-import { useTenantUserPermissions } from "@/hooks/use-tenant-user-permissions";
-import { EmptyState } from "@/components/dashboard/empty-state";
-import { TenantUserListToolbar } from "@/components/users/tenant-user-list-toolbar";
-import { TenantUsersTable, type TenantUserRow } from "@/components/users/tenant-users-table";
-import {
-  TenantUserDialogs,
-  type TenantUserLinkTarget,
-} from "@/components/users/tenant-user-dialogs";
-import { useTenantUserDialogState } from "@/components/users/use-tenant-user-dialog-state";
+import { useLazyQuery, useMutation, useQuery } from "@apollo/client/react";
+import { useMemo, useState } from "react";
 
 export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
   const [searchInput, setSearchInput] = useState("");
@@ -28,7 +31,18 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  const { loading: loadingPermissions, error: permissionsError, canViewUsers, canCreateUsers, canEditUsers, canChangeRoles, canActivateUsers, canResetPasswords, canSuspendUsers, canDeleteUsers } = useTenantUserPermissions();
+  const {
+    loading: loadingPermissions,
+    error: permissionsError,
+    canViewUsers,
+    canCreateUsers,
+    canEditUsers,
+    canChangeRoles,
+    canActivateUsers,
+    canResetPasswords,
+    canSuspendUsers,
+    canDeleteUsers,
+  } = useTenantUserPermissions();
 
   const { data, loading, error, refetch } = useQuery(TENANT_USERS_QUERY, {
     variables: { search: search || null, page, pageSize },
@@ -37,14 +51,49 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
 
   const [createUser, { loading: creating }] = useMutation(CREATE_TENANT_USER);
   const [deleteUser, { loading: deleting }] = useMutation(DELETE_TENANT_USER);
-  const [generateActivation, { loading: regenerating }] = useMutation(GENERATE_TENANT_USER_ACTIVATION);
+  const [generateActivation, { loading: regenerating }] = useMutation(
+    GENERATE_TENANT_USER_ACTIVATION,
+  );
   const [generateReset] = useMutation(GENERATE_TENANT_USER_PASSWORD_RESET);
   const [updateUser, { loading: updating }] = useMutation(UPDATE_TENANT_USER);
   const [loadActivationLink, { loading: loadingActivationLink }] = useLazyQuery(
     TENANT_USER_ACTIVATION_LINK,
     { fetchPolicy: "no-cache" },
   );
-  const { createOpen, setCreateOpen, editTarget, setEditTarget, deleteTarget, setDeleteTarget, deleteError, setDeleteError, firstName, setFirstName, lastName, setLastName, email, setEmail, role, setRole, accountStatus, setAccountStatus, formError, setFormError, linkResult, setLinkResult, activationTarget, setActivationTarget, activationLinkUser, setActivationLinkUser, activationLinkUnavailable, setActivationLinkUnavailable, activationLookupFailed, setActivationLookupFailed, openCreate, openEdit } = useTenantUserDialogState();
+  const {
+    createOpen,
+    setCreateOpen,
+    editTarget,
+    setEditTarget,
+    deleteTarget,
+    setDeleteTarget,
+    deleteError,
+    setDeleteError,
+    firstName,
+    setFirstName,
+    lastName,
+    setLastName,
+    email,
+    setEmail,
+    role,
+    setRole,
+    accountStatus,
+    setAccountStatus,
+    formError,
+    setFormError,
+    linkResult,
+    setLinkResult,
+    activationTarget,
+    setActivationTarget,
+    activationLinkUser,
+    setActivationLinkUser,
+    activationLinkUnavailable,
+    setActivationLinkUnavailable,
+    activationLookupFailed,
+    setActivationLookupFailed,
+    openCreate,
+    openEdit,
+  } = useTenantUserDialogState();
 
   const pageData = data?.tenantUsers;
   const users = pageData?.items ?? [];
@@ -73,9 +122,15 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
               firstName,
               lastName,
               email,
-              ...(editTarget.id === viewer.id || !canChangeRoles ? {} : { role }),
-              ...(editTarget.id === viewer.id || !canSuspendUsers ||
-                accountStatus === (editTarget.membershipStatus === "DISABLED" ? "INACTIVE" : "ACTIVE")
+              ...(editTarget.id === viewer.id || !canChangeRoles
+                ? {}
+                : { role }),
+              ...(editTarget.id === viewer.id ||
+              !canSuspendUsers ||
+              accountStatus ===
+                (editTarget.membershipStatus === "DISABLED"
+                  ? "INACTIVE"
+                  : "ACTIVE")
                 ? {}
                 : { suspended: accountStatus === "INACTIVE" }),
             },
@@ -100,7 +155,9 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
       }
       await refetch();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Could not create user");
+      setFormError(
+        err instanceof Error ? err.message : "Could not create user",
+      );
     }
   }
 
@@ -126,17 +183,25 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
     const user = activationTarget;
     setFormError(null);
     try {
-      const result = await generateActivation({ variables: { userId: user.id } });
+      const result = await generateActivation({
+        variables: { userId: user.id },
+      });
       const payload = result.data?.generateTenantUserActivationLink;
       if (!payload) throw new Error("Could not generate activation link");
       setActivationTarget(null);
       setActivationLinkUser(null);
       setActivationLinkUnavailable(false);
       setActivationLookupFailed(false);
-      setLinkResult({ url: payload.activationUrl, expiresAt: payload.expiresAt, label: `Activation link for ${user.email}` });
+      setLinkResult({
+        url: payload.activationUrl,
+        expiresAt: payload.expiresAt,
+        label: `Activation link for ${user.email}`,
+      });
       await refetch();
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Could not reactivate user");
+      setFormError(
+        error instanceof Error ? error.message : "Could not reactivate user",
+      );
     }
   }
 
@@ -145,7 +210,9 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
     setActivationLinkUnavailable(false);
     setActivationLookupFailed(false);
     try {
-      const result = await loadActivationLink({ variables: { userId: user.id } });
+      const result = await loadActivationLink({
+        variables: { userId: user.id },
+      });
       const payload = result.data?.tenantUserActivationLink;
       if (payload) {
         setActivationLinkUser(user);
@@ -159,7 +226,11 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
       setActivationLinkUnavailable(true);
       setActivationTarget(user);
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Could not retrieve the activation link");
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : "Could not retrieve the activation link",
+      );
       setActivationLookupFailed(true);
       setActivationTarget(user);
     }
@@ -188,9 +259,17 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
       const result = await generateReset({ variables: { userId: user.id } });
       const payload = result.data?.generateTenantUserPasswordResetLink;
       if (!payload) throw new Error("Could not generate password reset link");
-      setLinkResult({ url: payload.resetUrl, expiresAt: payload.expiresAt, label: `Password reset link for ${user.email}` });
+      setLinkResult({
+        url: payload.resetUrl,
+        expiresAt: payload.expiresAt,
+        label: `Password reset link for ${user.email}`,
+      });
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Could not generate password reset link");
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : "Could not generate password reset link",
+      );
     }
   }
 
@@ -200,7 +279,10 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
         searchInput={searchInput}
         canCreateUsers={canCreateUsers}
         onSearchInputChange={setSearchInput}
-        onSearch={() => { setPage(1); setSearch(searchInput.trim()); }}
+        onSearch={() => {
+          setPage(1);
+          setSearch(searchInput.trim());
+        }}
         onCreate={() => openCreate(canChangeRoles)}
       />
 
@@ -208,10 +290,15 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
         <p className="text-sm text-muted-foreground">Loading permissions…</p>
       ) : null}
       {permissionsError ? (
-        <p className="text-sm text-destructive">Unable to load your user-management permissions.</p>
+        <p className="text-sm text-destructive">
+          Unable to load your user-management permissions.
+        </p>
       ) : null}
       {!loadingPermissions && !permissionsError && !canViewUsers ? (
-        <EmptyState title="User Management unavailable" description="Your role does not have permission to view users." />
+        <EmptyState
+          title="User Management unavailable"
+          description="Your role does not have permission to view users."
+        />
       ) : null}
       {canViewUsers && initialLoading ? (
         <p className="text-sm text-muted-foreground">Loading users…</p>
@@ -224,7 +311,10 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
           Could not refresh users. Showing the most recent data.
         </p>
       ) : null}
-      {canViewUsers && !initialLoading && !blockingError && users.length === 0 ? (
+      {canViewUsers &&
+      !initialLoading &&
+      !blockingError &&
+      users.length === 0 ? (
         <EmptyState title="No users found" description={emptyDescription} />
       ) : null}
 
@@ -246,7 +336,17 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
           totalPages={totalPages}
           total={total}
           onPageChange={setPage}
-          onEdit={(user) => openEdit({ id: user.id, firstName: user.firstName ?? null, lastName: user.lastName ?? null, email: user.email, role: user.role as SubTenantRole, status: user.status, membershipStatus: user.membershipStatus })}
+          onEdit={(user) =>
+            openEdit({
+              id: user.id,
+              firstName: user.firstName ?? null,
+              lastName: user.lastName ?? null,
+              email: user.email,
+              role: user.role as SubTenantRole,
+              status: user.status,
+              membershipStatus: user.membershipStatus,
+            })
+          }
           onActivation={(user) => void viewActivationLink(user)}
           onResetPassword={(user) => void showPasswordResetLink(user)}
           onDelete={(user) => {
@@ -305,7 +405,6 @@ export function TenantUsersPanel({ viewer }: { viewer: AuthUser }) {
         onRetryActivationLookup={retryActivationLookup}
         onRequestActivationRegeneration={requestActivationRegeneration}
       />
-
     </div>
   );
 }

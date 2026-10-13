@@ -1,15 +1,14 @@
-import { cache } from "react";
-import { Suspense } from "react";
-import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { TenantAuthFlow } from "@/components/auth/tenant-auth-flow";
 import { TenantUnavailable } from "@/components/auth/tenant-unavailable";
 import {
   managementHostFromHeader,
-  resolveTenantByHostname,
   resolveLocalDevelopmentTenant,
+  resolveTenantByHostname,
   type ManagementHostResolution,
 } from "@/lib/tenant-hostname";
+import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { cache, Suspense } from "react";
 
 const lookupLocalDevelopmentTenant = cache(async () => {
   try {
