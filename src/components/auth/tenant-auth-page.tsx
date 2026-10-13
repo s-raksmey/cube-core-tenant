@@ -66,9 +66,27 @@ async function TenantAuthForRequest({ showLogin }: { showLogin: boolean }) {
   );
 }
 
+function TenantAuthLoading() {
+  return (
+    <main
+      aria-busy="true"
+      aria-label="Loading tenant workspace"
+      className="relative flex min-h-svh items-center justify-center overflow-hidden bg-background"
+    >
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-24 top-20 size-72 rounded-full bg-primary/10 blur-3xl"
+      />
+      <div className="relative text-sm text-muted-foreground">
+        Loading workspace…
+      </div>
+    </main>
+  );
+}
+
 export function TenantAuthPage({ showLogin = false }: { showLogin?: boolean }) {
   return (
-    <Suspense fallback={<TenantUnavailable />}>
+    <Suspense fallback={<TenantAuthLoading />}>
       <TenantAuthForRequest showLogin={showLogin} />
     </Suspense>
   );
