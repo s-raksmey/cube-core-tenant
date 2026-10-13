@@ -8,11 +8,22 @@ import { useTenantUsers } from "@/hooks/use-tenant-users";
 import { TenantUserDialogs } from "@/components/users/tenant-user-dialogs";
 import { TenantUserListToolbar } from "@/components/users/tenant-user-list-toolbar";
 import { TenantUsersTable } from "@/components/users/tenant-users-table";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useTenantUserPermissions } from "@/hooks/use-tenant-user-permissions";
 import type { SubTenantRole } from "@/lib/types";
+import { useState } from "react";
 
 /** Coordinates tenant user-management UI, data, dialog state, and actions. */
 export function TenantUsersPanel() {
+  const [resetTarget, setResetTarget] = useState<{ id: string; email: string; fullName: string | null } | null>(null);
   const viewer = useConsoleUser();
   const permissions = useTenantUserPermissions();
   const list = useTenantUsers({ canViewUsers: permissions.canViewUsers });
@@ -23,6 +34,7 @@ export function TenantUsersPanel() {
     canSuspendUsers: permissions.canSuspendUsers,
     dialogs,
     list,
+    onResetConfirmation: setResetTarget,
   });
 
   if (!permissions.loading && !permissions.canViewUsers) {
@@ -100,8 +112,18 @@ export function TenantUsersPanel() {
               membershipStatus: user.membershipStatus,
             })
           }
-          onActivation={actions.viewActivationLink}
-          onResetPassword={actions.showPasswordResetLink}
+          onActivation={(user) => {
+            dialogs.setFormError(null);
+            dialogs.setActivationLinkUnavailable(false);
+            dialogs.setActivationLookupFailed(false);
+            if (user.status === "ACTIVE") {
+              dialogs.setActivationTarget(user);
+              return;
+            }
+            void actions.viewActivationLink(user);
+          }}
+          loadingPasswordReset={actions.loadingResetLink || actions.resetting}
+          onResetPassword={actions.requestPasswordReset}
           onDelete={(user) => {
             dialogs.setDeleteError(null);
             dialogs.setDeleteTarget({
@@ -158,6 +180,28 @@ export function TenantUsersPanel() {
         onRetryActivationLookup={actions.retryActivationLookup}
         onRequestActivationRegeneration={actions.requestActivationRegeneration}
       />
+      <Dialog open={Boolean(resetTarget)} onOpenChange={(open) => !open && setResetTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset password?</DialogTitle>
+            <DialogDescription>
+              View the current single-use reset link for {resetTarget?.fullName ?? resetTarget?.email}. A valid unused stored link is reused; an expired or used link is replaced and stored for two hours.
+            </DialogDescription>
+          </DialogHeader>
+          {dialogs.formError ? <p className="text-sm text-destructive" role="alert">{dialogs.formError}</p> : null}
+          <DialogFooter>
+            <Button variant="outline" disabled={actions.resetting || actions.loadingResetLink} onClick={() => setResetTarget(null)}>Cancel</Button>
+            <Button disabled={actions.resetting || actions.loadingResetLink} onClick={() => {
+              if (!resetTarget) return;
+              void actions.showPasswordResetLink(resetTarget).then((created) => {
+                if (created) setResetTarget(null);
+              });
+            }}>
+              {actions.resetting || actions.loadingResetLink ? "Loading link…" : "Yes, reset password"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

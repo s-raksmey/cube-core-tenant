@@ -8,6 +8,7 @@ import {
   GENERATE_TENANT_USER_ACTIVATION,
   GENERATE_TENANT_USER_PASSWORD_RESET,
   TENANT_USER_ACTIVATION_LINK,
+  TENANT_USER_PASSWORD_RESET_LINK,
   UPDATE_TENANT_USER,
 } from "@/lib/apollo/operations";
 import type { TenantUserLinkTarget } from "@/types/tenant-user.types";
@@ -24,12 +25,18 @@ export function useTenantUserActions({
   canSuspendUsers,
   dialogs,
   list,
+  onResetConfirmation,
 }: {
   viewerId: string;
   canChangeRoles: boolean;
   canSuspendUsers: boolean;
   dialogs: TenantUserDialogState;
   list: TenantUsersList;
+  onResetConfirmation: (user: {
+    id: string;
+    email: string;
+    fullName: string | null;
+  }) => void;
 }) {
   const [createUser, { loading: creating }] = useMutation(CREATE_TENANT_USER);
   const [updateUser, { loading: updating }] = useMutation(UPDATE_TENANT_USER);
@@ -44,6 +51,35 @@ export function useTenantUserActions({
     TENANT_USER_ACTIVATION_LINK,
     { fetchPolicy: "no-cache" },
   );
+  const [loadResetLink, { loading: loadingResetLink }] = useLazyQuery(
+    TENANT_USER_PASSWORD_RESET_LINK,
+    { fetchPolicy: "no-cache" },
+  );
+
+  async function requestPasswordReset(user: {
+    id: string;
+    email: string;
+    fullName: string | null;
+  }) {
+    dialogs.setFormError(null);
+    try {
+      const result = await loadResetLink({ variables: { userId: user.id } });
+      const link = result.data?.tenantUserPasswordResetLink;
+      if (link) {
+        dialogs.setLinkResult({
+          url: link.resetUrl,
+          expiresAt: link.expiresAt,
+          label: `Password reset link for ${user.email}`,
+        });
+      } else {
+        onResetConfirmation(user);
+      }
+    } catch (error) {
+      dialogs.setFormError(
+        errorMessage(error, "Could not check password reset link"),
+      );
+    }
+  }
 
   async function saveUser() {
     dialogs.setFormError(null);
@@ -93,7 +129,8 @@ export function useTenantUserActions({
           label: `Activation link for ${payload.user.email}`,
         });
       }
-      await list.refetch();
+      // The link dialog should not wait for the list refresh.
+      void list.refetch();
     } catch (error) {
       dialogs.setFormError(errorMessage(error, "Could not create user"));
     }
@@ -136,7 +173,8 @@ export function useTenantUserActions({
         expiresAt: payload.expiresAt,
         label: `Activation link for ${user.email}`,
       });
-      await list.refetch();
+      // Show the newly issued link immediately; list freshness is non-blocking.
+      void list.refetch();
     } catch (error) {
       dialogs.setFormError(errorMessage(error, "Could not reactivate user"));
     }
@@ -199,10 +237,12 @@ export function useTenantUserActions({
         expiresAt: payload.expiresAt,
         label: `Password reset link for ${user.email}`,
       });
+      return true;
     } catch (error) {
       dialogs.setFormError(
         errorMessage(error, "Could not generate password reset link"),
       );
+      return false;
     }
   }
 
@@ -213,6 +253,7 @@ export function useTenantUserActions({
     regenerating,
     resetting,
     loadingActivationLink,
+    loadingResetLink,
     saveUser,
     deleteSelectedUser,
     regenerateActivationLink,
@@ -220,5 +261,6 @@ export function useTenantUserActions({
     requestActivationRegeneration,
     retryActivationLookup,
     showPasswordResetLink,
+    requestPasswordReset,
   };
 }

@@ -17,3 +17,19 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Keep pagination bounded. After SDL/operation changes, run `npm run graphql:codegen` and inspect generated operation types.
 - The same-origin GraphQL BFF must validate same-origin JSON requests, bound request size and upstream timeouts, and disable caching. Only trusted server-to-server auth operations such as refresh may send `TENANT_AUTH_ACTION_SECRET`; never expose it to browser code.
 - Follow `cube-core-server/docs/ARCHITECTURE.md` → “GraphQL field selection and data efficiency”.
+
+## Frontend architecture
+
+Use this structure for every new or changed Sub Tenant feature:
+
+- `src/app`: routes, layouts, and route-level composition only. Do not place feature data access, mutation handlers, or large UI blocks here.
+- `src/components`: presentational UI and page composition. Components receive data and callbacks through props. A component may query only when it is the session gate that establishes the authenticated tenant user.
+- `src/hooks`: Apollo queries, mutations, dynamic feature state, permission-aware actions, and browser synchronization such as branding and favicon refresh events.
+- `src/types`: shared feature contracts used by more than one component or hook. Keep component-private prop types in their component file.
+- `src/lib`: Apollo infrastructure, pure utilities, host resolution, and framework integration. Do not put React state or JSX here.
+
+Keep Sub Tenant responsibilities limited to the current tenant and its Admin and Editor users. Every user read, mutation, content operation, media operation, setting, and branding operation must remain tenant scoped and permission aware. Do not add Main Tenant SuperAdmin or cross-tenant behavior to this project.
+
+Before adding a new component, reuse an existing UI primitive, table, dialog, page header, permission hook, or branding hook when it fits. Split a feature when it combines data access, domain actions, and UI; do not create one-use wrapper files that only forward props.
+
+Run `npm run typecheck`, `npm run lint`, and `git diff --check` after frontend changes. Run a production build when a route, Apollo boundary, or framework behavior changes.

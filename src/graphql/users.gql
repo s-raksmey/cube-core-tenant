@@ -72,3 +72,7 @@ mutation GenerateTenantUserActivationLink($userId: ID!) {
 mutation GenerateTenantUserPasswordResetLink($userId: ID!) {
   generateTenantUserPasswordResetLink(userId: $userId) { resetUrl expiresAt }
 }
+
+query TenantUserPasswordResetLink($userId: ID!) {
+  tenantUserPasswordResetLink(userId: $userId) { resetUrl expiresAt }
+}

@@ -13,10 +13,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { TENANT_USER_PERMISSIONS_QUERY } from "@/lib/apollo/operations";
 import type { AuthUser } from "@/lib/types";
-import { gql } from "@apollo/client";
-import { useQuery } from "@apollo/client/react";
+import { useTenantSidebarBranding } from "@/hooks/use-tenant-sidebar-branding";
+import { useTenantUserPermissions } from "@/hooks/use-tenant-user-permissions";
 import {
   Activity,
   FileText,
@@ -29,57 +28,10 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
-
-const MY_BRANDING = gql`
-  query SidebarBranding {
-    myTenantBranding {
-      managementLogoUrl
-      faviconUrl
-    }
-  }
-`;
 const storageBase =
   process.env.NEXT_PUBLIC_GRAPHQL_SERVER_URL?.replace(/\/graphql$/, "") ??
   "http://localhost:4000";
 
-function tenantAssetPath(path: string) {
-  return `/tenant-assets/${path.replace(/^\/storage\//, "")}`;
-}
-
-function faviconMimeType(path: string) {
-  const extension = path.split(".").pop()?.toLowerCase();
-  return (
-    {
-      ico: "image/x-icon",
-      png: "image/png",
-      svg: "image/svg+xml",
-      webp: "image/webp",
-    }[extension ?? ""] ?? "image/x-icon"
-  );
-}
-
-function applyTenantFavicon(path: string | null | undefined) {
-  const existing = document.querySelector<HTMLLinkElement>(
-    "link[data-tenant-favicon]",
-  );
-
-  if (!path) {
-    existing?.remove();
-    return;
-  }
-
-  const link = existing ?? document.createElement("link");
-  link.dataset.tenantFavicon = "true";
-  link.rel = "icon";
-  link.type = faviconMimeType(path);
-  // Every uploaded asset has its own path, which provides a stable cache key.
-  link.href = tenantAssetPath(path);
-
-  if (!existing) {
-    document.head.appendChild(link);
-  }
-}
 
 type NavItem = {
   title: string;
@@ -121,34 +73,12 @@ function tenantInitials(name: string) {
 
 export function AppSidebar({ user }: { user: AuthUser }) {
   const pathname = usePathname();
-  const { data } = useQuery(TENANT_USER_PERMISSIONS_QUERY);
-  const canViewUsers =
-    data?.tenantUserPermissions?.includes("USERS_VIEW") ?? false;
-  const canViewSettings =
-    data?.tenantUserPermissions?.includes("BRANDING_VIEW") ?? false;
-  const { data: brandingData, refetch: refetchBranding } = useQuery<{
-    myTenantBranding: {
-      managementLogoUrl: string | null;
-      faviconUrl: string | null;
-    };
-  }>(MY_BRANDING);
-  const managementLogoUrl = brandingData?.myTenantBranding.managementLogoUrl;
-  const faviconUrl = brandingData?.myTenantBranding.faviconUrl;
-  useEffect(() => {
-    applyTenantFavicon(faviconUrl);
-  }, [faviconUrl]);
-  useEffect(() => {
-    const refreshBranding = () => {
-      void refetchBranding();
-    };
-    window.addEventListener("tenant-branding-updated", refreshBranding);
-    return () =>
-      window.removeEventListener("tenant-branding-updated", refreshBranding);
-  }, [refetchBranding]);
+  const { canViewUsers, canViewBranding } = useTenantUserPermissions();
+  const { managementLogoUrl } = useTenantSidebarBranding();
   const items = (user.role === "EDITOR" ? editorNav : adminNav).filter(
     (item) =>
       (item.href !== "/users" || canViewUsers) &&
-      (item.href !== "/settings" || canViewSettings),
+      (item.href !== "/settings" || canViewBranding),
   );
 
   return (

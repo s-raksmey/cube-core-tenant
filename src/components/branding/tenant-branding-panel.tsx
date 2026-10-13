@@ -2,7 +2,7 @@
 
 import { BrandingAssetCard } from "@/components/branding/branding-asset-card";
 import { BRANDING_ASSETS, BRANDING_FIELDS } from "@/components/branding/branding-config";
-import type { BrandingAsset, BrandingRecord } from "@/types/branding.types";
+import type { BrandingAsset } from "@/types/branding.types";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

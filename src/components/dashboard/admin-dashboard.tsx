@@ -18,17 +18,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { TENANT_USER_PERMISSIONS_QUERY } from "@/lib/apollo/operations";
 import type { AuthUser } from "@/lib/types";
-import { useQuery } from "@apollo/client/react";
+import { useTenantUserPermissions } from "@/hooks/use-tenant-user-permissions";
 import { FileText, HardDrive, ShieldCheck, Users } from "lucide-react";
 
 export function AdminDashboard({ user }: { user: AuthUser }) {
   const { data, error, refetch, initialLoading } = useTenantDashboardData();
-  const { data: permissionsData } = useQuery(TENANT_USER_PERMISSIONS_QUERY);
+  const { canViewUsers } = useTenantUserPermissions();
   const dashboard = data?.tenantDashboard;
-  const canViewUsers =
-    permissionsData?.tenantUserPermissions?.includes("USERS_VIEW") ?? false;
   return (
     <div className="space-y-6">
       <PageHeader

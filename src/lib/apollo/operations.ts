@@ -4,6 +4,7 @@ export {
   DeleteTenantUserDocument as DELETE_TENANT_USER,
   GenerateTenantUserActivationLinkDocument as GENERATE_TENANT_USER_ACTIVATION,
   GenerateTenantUserPasswordResetLinkDocument as GENERATE_TENANT_USER_PASSWORD_RESET,
+  TenantUserPasswordResetLinkDocument as TENANT_USER_PASSWORD_RESET_LINK,
   MeDocument as ME_QUERY,
   TenantDashboardDocument as TENANT_DASHBOARD_QUERY,
   TenantRolePermissionSummaryDocument as TENANT_ROLE_PERMISSION_SUMMARY_QUERY,

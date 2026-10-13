@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  TenantAuthCard,
-  type TenantAuthChallenge,
-  type TenantAuthStep,
-} from "@/components/auth/tenant-auth-card";
+import { TenantAuthCard } from "@/components/auth/tenant-auth-card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
@@ -17,6 +13,7 @@ import {
   verifyTenantTotpEnrollment,
 } from "@/lib/auth/session-actions";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import type { TenantAuthChallenge, TenantAuthStep } from "@/types/auth.types";
 
 type Step = TenantAuthStep;
 type ChallengeState = TenantAuthChallenge;

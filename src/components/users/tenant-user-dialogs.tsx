@@ -1,7 +1,7 @@
 "use client";
 
-import { Copy } from "lucide-react";
-import type { Dispatch, SetStateAction } from "react";
+import { Check, Copy } from "lucide-react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -68,6 +68,7 @@ type TenantUserDialogsProps = {
 };
 
 export function TenantUserDialogs(props: TenantUserDialogsProps) {
+  const [linkCopied, setLinkCopied] = useState(false);
   const {
     viewerId,
     createOpen,
@@ -240,14 +241,27 @@ export function TenantUserDialogs(props: TenantUserDialogsProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {activationLookupFailed
+              {activationTarget?.status === "ACTIVE"
+                ? "Reactivate account and reset 2FA?"
+                : activationLookupFailed
                 ? "Could not retrieve the activation link"
                 : activationLinkUnavailable
                   ? "No existing link is available"
                   : "Regenerate activation link?"}
             </DialogTitle>
             <DialogDescription>
-              {activationLookupFailed
+              {activationTarget?.status === "ACTIVE"
+                ? <>
+                    This will revoke active sessions, clear the existing 2FA
+                    setup and recovery codes, and move{" "}
+                    <span className="font-medium text-foreground">
+                      {activationTarget?.firstName} {activationTarget?.lastName}
+                    </span>{" "}
+                    ({activationTarget?.email}) back to pending activation.
+                    Their username and password will be cleared; they will set
+                    them again and scan a new QR code.
+                  </>
+                : activationLookupFailed
                 ? "The existing link was not changed. Retry to view it, or regenerate a replacement link."
                 : activationLinkUnavailable
                   ? "The existing link has expired, was used, or cannot be recovered. Generate a new single-use activation link for this pending user."
@@ -284,7 +298,11 @@ export function TenantUserDialogs(props: TenantUserDialogsProps) {
               disabled={regenerating}
               onClick={() => void onRegenerateActivation()}
             >
-              {regenerating ? "Regenerating…" : "Regenerate link"}
+              {regenerating
+                ? "Reactivating…"
+                : activationTarget?.status === "ACTIVE"
+                  ? "Reactivate"
+                  : "Regenerate link"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -296,43 +314,55 @@ export function TenantUserDialogs(props: TenantUserDialogsProps) {
           if (!open) {
             setLinkResult(null);
             setActivationLinkUser(null);
+            setLinkCopied(false);
           }
         }}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{linkResult?.label ?? "Secure link"}</DialogTitle>
+            <DialogTitle>
+              {linkResult?.label?.startsWith("Password reset")
+                ? "Password reset link"
+                : activationLinkUser
+                  ? "Current activation link"
+                  : "Activation link"}
+            </DialogTitle>
             <DialogDescription>
-              Expires{" "}
-              {linkResult?.expiresAt
-                ? new Date(linkResult.expiresAt).toLocaleString()
-                : "—"}
-              . Copy and deliver through an approved channel. The link is
-              single-use.
+              {linkResult?.label?.startsWith("Password reset")
+                ? `Use this single-use reset link for ${linkResult.label.replace("Password reset link for ", "")}. It expires ${linkResult.expiresAt ? new Date(linkResult.expiresAt).toLocaleString() : "—"}.`
+                : activationLinkUser
+                  ? `This existing link for user ${activationLinkUser.username ?? activationLinkUser.email} expires ${linkResult?.expiresAt ? new Date(linkResult.expiresAt).toLocaleString() : "—"}.`
+                  : `Expires ${linkResult?.expiresAt ? new Date(linkResult.expiresAt).toLocaleString() : "—"}. Copy and deliver through an approved channel. The link is single-use.`}
             </DialogDescription>
           </DialogHeader>
-          <p className="break-all rounded-md bg-muted p-3 text-sm">
-            {linkResult?.url}
-          </p>
+          {linkResult ? (
+            <div className="flex gap-2">
+              <Input
+                value={linkResult.url}
+                readOnly
+                aria-label={linkResult.label}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  void navigator.clipboard.writeText(linkResult.url).then(() =>
+                    setLinkCopied(true),
+                  );
+                }}
+                aria-label="Copy link"
+              >
+                {linkCopied ? <Check /> : <Copy />}
+              </Button>
+            </div>
+          ) : null}
+          {linkCopied ? (
+            <p className="text-sm text-muted-foreground" role="status">
+              Link copied.
+            </p>
+          ) : null}
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setLinkResult(null)}
-            >
-              Close
-            </Button>
-            <Button
-              type="button"
-              onClick={() =>
-                linkResult
-                  ? void navigator.clipboard.writeText(linkResult.url)
-                  : undefined
-              }
-            >
-              <Copy className="size-4" />
-              Copy link
-            </Button>
             {activationLinkUser ? (
               <Button
                 type="button"
@@ -342,6 +372,15 @@ export function TenantUserDialogs(props: TenantUserDialogsProps) {
                 Regenerate link
               </Button>
             ) : null}
+            <Button
+              type="button"
+              onClick={() => {
+                setLinkResult(null);
+                setLinkCopied(false);
+              }}
+            >
+              Done
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

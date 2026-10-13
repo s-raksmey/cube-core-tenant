@@ -23,6 +23,7 @@ type TenantUsersTableProps = {
   viewerId: string;
   actions: TenantUserActions;
   loadingActivationLink: boolean;
+  loadingPasswordReset: boolean;
   regenerating: boolean;
   page: number;
   totalPages: number;
@@ -50,6 +51,7 @@ export function TenantUsersTable({
   viewerId,
   actions,
   loadingActivationLink,
+  loadingPasswordReset,
   regenerating,
   page,
   totalPages,
@@ -158,6 +160,7 @@ export function TenantUsersTable({
                             aria-label={`Reset password for ${user.username || user.email}`}
                             title="Reset password"
                             disabled={
+                              loadingPasswordReset ||
                               user.status !== "ACTIVE" &&
                               user.status !== "LOCKED"
                             }
