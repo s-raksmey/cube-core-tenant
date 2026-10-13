@@ -33,7 +33,7 @@ function AssetPreview({
           unoptimized
           loading={isSocial ? "eager" : undefined}
           sizes={isSocial ? "(min-width: 1024px) 40vw, 100vw" : "240px"}
-          className={isSocial ? "object-cover" : "p-4 object-contain"}
+          className={isSocial ? "p-2 object-contain" : "p-4 object-contain"}
         />
       ) : (
         <div className="text-center text-xs text-muted-foreground">

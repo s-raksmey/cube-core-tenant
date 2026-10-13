@@ -10,10 +10,11 @@ import {
 } from "@/components/ui/sidebar";
 import type { AuthUser } from "@/lib/types";
 import { clearTenantSession } from "@/lib/auth/session-actions";
+import { tenantDocumentTitleStorageKey } from "@/lib/tenant-document-title";
 import { useApolloClient } from "@apollo/client/react";
 import { LogOut } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, type CSSProperties } from "react";
+import { useRouter } from "next/navigation";
+import { useLayoutEffect, type CSSProperties } from "react";
 
 export function ConsoleShell({
   user,
@@ -22,13 +23,13 @@ export function ConsoleShell({
   user: AuthUser;
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
   const router = useRouter();
   const apollo = useApolloClient();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     document.title = user.tenant.name;
-  }, [pathname, user.tenant.name]);
+    localStorage.setItem(tenantDocumentTitleStorageKey, user.tenant.name);
+  }, [user.tenant.name]);
 
   async function handleLogout() {
     try {

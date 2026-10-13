@@ -1,11 +1,11 @@
 import { ConsoleGate } from "@/components/dashboard/console-gate";
-import type { Metadata } from "next";
+import { tenantAuthMetadata } from "@/components/auth/tenant-auth-page";
 import { connection } from "next/server";
 import { Suspense, type ReactNode } from "react";
 
-// ConsoleShell sets the authenticated tenant name after the session check.
-// Keeping workspace metadata static avoids a second tenant lookup on every route.
-export const metadata: Metadata = { title: "Tenant workspace" };
+// Use the same cached tenant metadata as the landing page so browser chrome
+// has the tenant name and favicon before the workspace hydrates.
+export const generateMetadata = tenantAuthMetadata;
 
 async function WorkspaceRoute({ children }: { children: ReactNode }) {
   // ConsoleGate validates the session in the client. Keeping this wrapper
