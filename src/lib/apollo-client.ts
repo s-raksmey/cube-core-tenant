@@ -8,9 +8,17 @@ export function createApolloClient() {
       uri: "/graphql",
       credentials: "same-origin",
     }),
+
     cache: new InMemoryCache(),
+
     defaultOptions: {
-      watchQuery: { fetchPolicy: "cache-first" },
+      watchQuery: {
+        fetchPolicy: "cache-and-network",
+        nextFetchPolicy: "cache-first",
+      },
+      query: {
+        fetchPolicy: "network-only",
+      },
     },
   });
 }
