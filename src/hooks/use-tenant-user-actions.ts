@@ -1,6 +1,7 @@
 "use client";
 
-import { useLazyQuery, useMutation } from "@apollo/client/react";
+import type { TenantUserDialogState } from "@/hooks/use-tenant-user-dialog-state";
+import type { TenantUsersList } from "@/hooks/use-tenant-users";
 import {
   CREATE_TENANT_USER,
   DELETE_TENANT_USER,
@@ -9,9 +10,8 @@ import {
   TENANT_USER_ACTIVATION_LINK,
   UPDATE_TENANT_USER,
 } from "@/lib/apollo/operations";
-import type { TenantUserDialogState } from "@/hooks/use-tenant-user-dialog-state";
-import type { TenantUsersList } from "@/hooks/use-tenant-users";
 import type { TenantUserLinkTarget } from "@/types/tenant-user.types";
+import { useLazyQuery, useMutation } from "@apollo/client/react";
 
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -122,7 +122,9 @@ export function useTenantUserActions({
     const user = dialogs.activationTarget;
     dialogs.setFormError(null);
     try {
-      const result = await generateActivation({ variables: { userId: user.id } });
+      const result = await generateActivation({
+        variables: { userId: user.id },
+      });
       const payload = result.data?.generateTenantUserActivationLink;
       if (!payload) throw new Error("Could not generate activation link");
       dialogs.setActivationTarget(null);
@@ -145,7 +147,9 @@ export function useTenantUserActions({
     dialogs.setActivationLinkUnavailable(false);
     dialogs.setActivationLookupFailed(false);
     try {
-      const result = await loadActivationLink({ variables: { userId: user.id } });
+      const result = await loadActivationLink({
+        variables: { userId: user.id },
+      });
       const payload = result.data?.tenantUserActivationLink;
       if (payload) {
         dialogs.setActivationLinkUser(user);
@@ -159,7 +163,9 @@ export function useTenantUserActions({
       dialogs.setActivationLinkUnavailable(true);
       dialogs.setActivationTarget(user);
     } catch (error) {
-      dialogs.setFormError(errorMessage(error, "Could not retrieve the activation link"));
+      dialogs.setFormError(
+        errorMessage(error, "Could not retrieve the activation link"),
+      );
       dialogs.setActivationLookupFailed(true);
       dialogs.setActivationTarget(user);
     }
@@ -194,7 +200,9 @@ export function useTenantUserActions({
         label: `Password reset link for ${user.email}`,
       });
     } catch (error) {
-      dialogs.setFormError(errorMessage(error, "Could not generate password reset link"));
+      dialogs.setFormError(
+        errorMessage(error, "Could not generate password reset link"),
+      );
     }
   }
 

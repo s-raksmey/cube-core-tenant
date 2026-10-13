@@ -1,12 +1,12 @@
 "use client";
 
+import type { SubTenantRole } from "@/lib/types";
 import type {
   TenantUserDeleteTarget,
   TenantUserEditTarget,
-  TenantUserLinkTarget,
   TenantUserLinkResult,
+  TenantUserLinkTarget,
 } from "@/types/tenant-user.types";
-import type { SubTenantRole } from "@/lib/types";
 import { useState } from "react";
 
 /** Groups form and dialog state for tenant user-management actions. */

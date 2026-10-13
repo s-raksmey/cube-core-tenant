@@ -1,9 +1,9 @@
 "use client";
 
 import { TENANT_USERS_QUERY } from "@/lib/apollo/operations";
+import type { TenantUserRow } from "@/types/tenant-user.types";
 import { useQuery } from "@apollo/client/react";
 import { useMemo, useState } from "react";
-import type { TenantUserRow } from "@/types/tenant-user.types";
 
 const PAGE_SIZE = 10;
 
