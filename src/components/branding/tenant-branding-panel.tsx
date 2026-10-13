@@ -13,39 +13,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useTenantUserPermissions } from "@/hooks/use-tenant-user-permissions";
-import { gql } from "@apollo/client";
-import { useMutation, useQuery } from "@apollo/client/react";
+import { useTenantBranding } from "@/hooks/use-tenant-branding";
 import { useState } from "react";
 
-const BRANDING = gql`
-  query MyBranding {
-    myTenantBranding {
-      managementLogoUrl
-      websiteLogoUrl
-      faviconUrl
-      publicWebsiteFaviconUrl
-      openGraphImageUrl
-    }
-  }
-`;
-const UPDATE = gql`
-  mutation UpdateMyTenantBranding(
-    $asset: BrandingAsset!
-    $fileName: String!
-    $mimeType: String!
-    $contentBase64: String
-  ) {
-    updateMyTenantBranding(
-      asset: $asset
-      fileName: $fileName
-      mimeType: $mimeType
-      contentBase64: $contentBase64
-    ) {
-      faviconUrl
-      publicWebsiteFaviconUrl
-    }
-  }
-`;
 
 type PendingAssetAction =
   | { type: "replace"; asset: BrandingAsset; file: File }
@@ -66,12 +36,8 @@ export function TenantBrandingPanel() {
     canViewBranding: canView,
     canUpdateBranding: canEdit,
   } = useTenantUserPermissions();
-  const { data, loading, error, refetch } = useQuery<{
-    myTenantBranding: BrandingRecord;
-  }>(BRANDING, {
-    skip: permissionsLoading || !canView,
-  });
-  const [update, { loading: saving }] = useMutation(UPDATE);
+  const { data, loading, error, refetch, updateBranding: update, saving } =
+    useTenantBranding({ canView: !permissionsLoading && canView });
   const [message, setMessage] = useState<string | null>(null);
   const [changes, setChanges] = useState<
     Partial<Record<BrandingAsset, File | null>>
