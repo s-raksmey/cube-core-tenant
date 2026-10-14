@@ -1,0 +1,5 @@
+query Tags($search: String, $page: Int, $pageSize: Int) { tags(search: $search, page: $page, pageSize: $pageSize) { id name slug translations { locale name } } }
+mutation CreateTag($input: CreateTagInput!) { createTag(input: $input) { id } }
+mutation UpdateTag($id: ID!, $input: UpdateTagInput!) { updateTag(id: $id, input: $input) { id } }
+mutation DeleteTag($id: ID!) { deleteTag(id: $id) }
+

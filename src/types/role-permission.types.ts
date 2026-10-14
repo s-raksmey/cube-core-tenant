@@ -23,6 +23,10 @@ export const TENANT_CATEGORY_PERMISSION_ROWS = [
   ["CATEGORY_EDIT_SUBCATEGORY", "Edit sub category"],
   ["CATEGORY_DELETE", "Delete category"],
   ["CATEGORY_DELETE_SUBCATEGORY", "Delete sub category"],
+  ["TAG_VIEW", "View tags"],
+  ["TAG_CREATE", "Create tags"],
+  ["TAG_EDIT", "Edit tags"],
+  ["TAG_DELETE", "Delete tags"],
 ] as const;
 
 export const TENANT_PERMISSION_ROLES = ["ADMIN", "EDITOR"] as const;

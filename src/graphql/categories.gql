@@ -43,6 +43,18 @@ mutation CreateSubcategory($input: CreateSubcategoryInput!) {
   }
 }
 
+mutation UpdateCategory($id: ID!, $input: UpdateCategoryInput!) {
+  updateCategory(id: $id, input: $input) {
+    id
+    slug
+    name
+    translations {
+      locale
+      name
+    }
+  }
+}
+
 mutation DeleteCategory($id: ID!) {
   deleteCategory(id: $id)
 }

@@ -44,7 +44,7 @@ export function TenantRolePermissionsPanel() {
         permissionsByRole={permissionsByRole}
       />
       <TenantPermissionSummaryCard
-        title="Categories"
+        title="Categories & Tags"
         rows={TENANT_CATEGORY_PERMISSION_ROWS}
         permissionsByRole={permissionsByRole}
       />

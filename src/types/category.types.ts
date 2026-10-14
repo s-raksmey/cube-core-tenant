@@ -18,6 +18,21 @@ export type TenantCategory = {
   subcategories: TenantSubcategory[];
 };
 
+export type CategoryFormState = {
+  slug: string;
+  translations: TranslationDraft[];
+};
+
+export function categoryToFormState(category: TenantCategory): CategoryFormState {
+  const translations = category.translations.map((translation) => ({ ...translation }));
+  return {
+    slug: category.slug,
+    translations: translations.some((translation) => translation.locale === "en")
+      ? translations
+      : [{ locale: "en", name: category.name }, ...translations],
+  };
+}
+
 export type CategoryTarget = {
   id: string;
   name: string;

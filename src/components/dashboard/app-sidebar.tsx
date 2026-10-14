@@ -80,7 +80,7 @@ export function AppSidebar({ user }: { user: AuthUser }) {
   const [contentOpen, setContentOpen] = useState(
     pathname.startsWith("/content"),
   );
-  const { canViewUsers, canViewBranding, canViewCategories } = useTenantUserPermissions();
+  const { canViewUsers, canViewBranding, canViewCategories, canViewTags } = useTenantUserPermissions();
   const { managementLogoUrl } = useTenantSidebarBranding();
   const items = (user.role === "EDITOR" ? editorNav : adminNav).filter(
     (item) =>
@@ -176,6 +176,7 @@ export function AppSidebar({ user }: { user: AuthUser }) {
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     ) : null}
+                    {canViewTags ? (
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton
                         asChild
@@ -187,6 +188,7 @@ export function AppSidebar({ user }: { user: AuthUser }) {
                         </Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
+                    ) : null}
                   </SidebarMenuSub>
                 ) : null}
               </SidebarMenuItem>

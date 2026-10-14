@@ -4,11 +4,13 @@ import {
   CATEGORIES_QUERY,
   CREATE_CATEGORY,
   CREATE_SUBCATEGORY,
+  UPDATE_CATEGORY,
   DELETE_CATEGORY,
 } from "@/lib/apollo/operations";
 import type {
   CreateCategoryInput,
   CreateSubcategoryInput,
+  UpdateCategoryInput,
 } from "@/lib/apollo/generated/graphql";
 import type { TenantCategory } from "@/types/category.types";
 import { useMutation, useQuery } from "@apollo/client/react";
@@ -25,6 +27,7 @@ export function useTenantCategories() {
   const [runCreateSubcategory, createSubcategoryState] = useMutation(
     CREATE_SUBCATEGORY,
   );
+  const [runUpdateCategory, updateCategoryState] = useMutation(UPDATE_CATEGORY);
   const [runDeleteCategory, deleteCategoryState] = useMutation(DELETE_CATEGORY);
 
   const categories = useMemo(
@@ -57,6 +60,14 @@ export function useTenantCategories() {
     [refresh, runCreateSubcategory],
   );
 
+  const updateCategory = useCallback(
+    async (id: string, input: UpdateCategoryInput) => {
+      await runUpdateCategory({ variables: { id, input } });
+      await refresh();
+    },
+    [refresh, runUpdateCategory],
+  );
+
   const deleteCategory = useCallback(
     async (id: string) => {
       await runDeleteCategory({ variables: { id } });
@@ -74,9 +85,11 @@ export function useTenantCategories() {
     error: query.error,
     createCategory,
     createSubcategory,
+    updateCategory,
     deleteCategory,
     creatingCategory: createCategoryState.loading,
     creatingSubcategory: createSubcategoryState.loading,
+    updatingCategory: updateCategoryState.loading,
     deletingCategory: deleteCategoryState.loading,
     createCategoryError: createCategoryState.error,
     createSubcategoryError: createSubcategoryState.error,

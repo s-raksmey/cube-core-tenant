@@ -13,8 +13,8 @@ import { Input } from "@/components/ui/input";
 import { useTenantCategories } from "@/hooks/use-tenant-categories";
 import { useTenantUserPermissions } from "@/hooks/use-tenant-user-permissions";
 import { supportedLocales } from "@/lib/locales";
-import type { CategoryTarget, TranslationDraft } from "@/types/category.types";
-import { ChevronDown, ChevronRight, FolderPlus, Plus, Trash2 } from "lucide-react";
+import { categoryToFormState, type CategoryTarget, type TenantCategory, type TranslationDraft } from "@/types/category.types";
+import { ChevronDown, ChevronRight, FolderPlus, Pencil, Plus, Trash2 } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
 
 const defaultTranslation = (): TranslationDraft => ({ locale: "en", name: "" });
@@ -30,6 +30,7 @@ function formatSlug(value: string) {
 /** Tenant-scoped category list and translation-aware create workflow. */
 export function CategoriesPanel() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<TenantCategory | null>(null);
   const [slug, setSlug] = useState("");
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
   const [translations, setTranslations] = useState<TranslationDraft[]>([
@@ -49,20 +50,24 @@ export function CategoriesPanel() {
     error,
     createCategory,
     createSubcategory,
+    updateCategory,
     deleteCategory,
     creatingCategory,
     creatingSubcategory,
     createCategoryError,
     createSubcategoryError,
+    updatingCategory,
   } = useTenantCategories();
   const {
     canCreateCategories,
     canViewSubcategories,
     canCreateSubcategories,
+    canEditCategories,
     canDeleteCategories,
   } = useTenantUserPermissions();
   const showActions =
-    canCreateSubcategories || canDeleteCategories;  const availableLocales = useMemo(
+    canCreateSubcategories || canEditCategories || canDeleteCategories;
+  const availableLocales = useMemo(
     () =>
       supportedLocales.filter((locale) => locale.code !== "th").filter(
         (locale) => !translations.some((item) => item.locale === locale.code),
@@ -93,7 +98,17 @@ export function CategoriesPanel() {
 
   function closeCreateDialog() {
     setIsCreateDialogOpen(false);
+    setEditingCategory(null);
     resetCreateForm();
+  }
+
+  function openEditDialog(category: TenantCategory) {
+    const form = categoryToFormState(category);
+    setEditingCategory(category);
+    setSlug(form.slug);
+    setIsSlugManuallyEdited(true);
+    setTranslations(form.translations);
+    setIsCreateDialogOpen(true);
   }
 
   function updateTranslation(index: number, update: Partial<TranslationDraft>) {
@@ -143,13 +158,15 @@ export function CategoriesPanel() {
   }
   async function submit() {
     try {
-      await createCategory({
+      const input = {
         slug,
         translations: translations.map((translation) => ({
           ...translation,
           name: translation.name.trim(),
         })),
-      });
+      };
+      if (editingCategory) await updateCategory(editingCategory.id, input);
+      else await createCategory(input);
       closeCreateDialog();
     } catch {
       // The operation error is presented next to the form actions.
@@ -257,6 +274,17 @@ export function CategoriesPanel() {
                         {showActions ? (
                           <td className="p-3 text-right">
                             <div className="flex justify-end gap-1">
+                              {canEditCategories ? (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  title="Edit category"
+                                  aria-label={`Edit ${categoryName}`}
+                                  onClick={() => openEditDialog(category)}
+                                >
+                                  <Pencil />
+                                </Button>
+                              ) : null}
                               {canCreateSubcategories ? (
                                 <Button
                                   variant="ghost"
@@ -320,7 +348,7 @@ export function CategoriesPanel() {
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent className="gap-5 p-0 sm:max-w-md">
           <DialogHeader className="gap-1 px-5 pt-5">
-            <DialogTitle>Create category</DialogTitle>
+            <DialogTitle>{editingCategory ? "Edit category" : "Create category"}</DialogTitle>
             <DialogDescription>
               Start with the English name, then add translations when needed.
             </DialogDescription>
@@ -463,10 +491,10 @@ export function CategoriesPanel() {
               Cancel
             </Button>
             <Button
-              disabled={creatingCategory || !slug || hasIncompleteTranslation}
+              disabled={creatingCategory || updatingCategory || !slug || hasIncompleteTranslation}
               onClick={() => void submit()}
             >
-              {creatingCategory ? "Creating…" : "Create category"}
+              {creatingCategory || updatingCategory ? "Saving…" : editingCategory ? "Save changes" : "Create category"}
             </Button>
           </DialogFooter>
         </DialogContent>
