@@ -35,3 +35,21 @@ query TenantDashboard {
     }
   }
 }
+
+query TenantAuditLogs($page: Int) {
+  tenantAuditLogs(page: $page) {
+    items {
+      id
+      action
+      success
+      createdAt
+      actorEmail
+      targetType
+      targetId
+      details
+    }
+    total
+    page
+    pageSize
+  }
+}

@@ -7,6 +7,7 @@ export {
   TenantUserPasswordResetLinkDocument as TENANT_USER_PASSWORD_RESET_LINK,
   MeDocument as ME_QUERY,
   TenantDashboardDocument as TENANT_DASHBOARD_QUERY,
+  TenantAuditLogsDocument as TENANT_AUDIT_LOGS_QUERY,
   TenantRolePermissionSummaryDocument as TENANT_ROLE_PERMISSION_SUMMARY_QUERY,
   TenantUserActivationLinkDocument as TENANT_USER_ACTIVATION_LINK,
   TenantUserPermissionsDocument as TENANT_USER_PERMISSIONS_QUERY,
