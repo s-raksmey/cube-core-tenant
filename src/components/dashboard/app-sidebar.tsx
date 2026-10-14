@@ -80,7 +80,7 @@ export function AppSidebar({ user }: { user: AuthUser }) {
   const [contentOpen, setContentOpen] = useState(
     pathname.startsWith("/content"),
   );
-  const { canViewUsers, canViewBranding, canViewCategories, canViewTags } = useTenantUserPermissions();
+  const { canViewUsers, canViewBranding, canViewCategories, canViewTags, canViewArticles } = useTenantUserPermissions();
   const { managementLogoUrl } = useTenantSidebarBranding();
   const items = (user.role === "EDITOR" ? editorNav : adminNav).filter(
     (item) =>
@@ -137,7 +137,7 @@ export function AppSidebar({ user }: { user: AuthUser }) {
                   </SidebarMenuItem>
                 );
               })}
-              <SidebarMenuItem>
+              {canViewArticles || canViewCategories || canViewTags ? <SidebarMenuItem>
                 <SidebarMenuButton
                   isActive={pathname.startsWith("/content")}
                   tooltip="Content"
@@ -152,7 +152,7 @@ export function AppSidebar({ user }: { user: AuthUser }) {
                 </SidebarMenuButton>
                 {contentOpen ? (
                   <SidebarMenuSub>
-                    <SidebarMenuSubItem>
+                    {canViewArticles ? <SidebarMenuSubItem>
                       <SidebarMenuSubButton
                         asChild
                         isActive={pathname === "/content/articles"}
@@ -162,7 +162,7 @@ export function AppSidebar({ user }: { user: AuthUser }) {
                           <span>Articles</span>
                         </Link>
                       </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
+                    </SidebarMenuSubItem> : null}
                     {canViewCategories ? (
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton
@@ -191,7 +191,7 @@ export function AppSidebar({ user }: { user: AuthUser }) {
                     ) : null}
                   </SidebarMenuSub>
                 ) : null}
-              </SidebarMenuItem>
+              </SidebarMenuItem> : null}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -1,0 +1,40 @@
+query Articles($search: String, $status: ArticleStatus, $categoryId: ID, $scope: ArticleScope, $page: Int, $pageSize: Int) {
+  articles(search: $search, status: $status, categoryId: $categoryId, scope: $scope, page: $page, pageSize: $pageSize) {
+    items { id title status categoryName authorId authorName featuredImageUrl updatedAt }
+    total page pageSize
+  }
+}
+
+query Article($id: ID!) {
+  article(id: $id) {
+    id title slug summary content status categoryId categoryName subcategoryId subcategoryName
+    authorId authorName isBreaking isFeatured featuredImageUrl
+    scheduledAt publishedAt
+    tags { id name }
+    translations { locale title summary content }
+    reviews { id decision comment reviewerName createdAt }
+  }
+}
+
+query ArticleForEdit($id: ID!) {
+  article(id: $id) {
+    id title slug summary content status categoryId subcategoryId authorId
+    isBreaking isFeatured featuredImageUrl
+    tags { id name }
+    translations { locale title summary content }
+  }
+}
+
+mutation CreateArticle($input: CreateArticleInput!) { createArticle(input: $input) { id } }
+mutation UpdateArticle($id: ID!, $input: UpdateArticleInput!) { updateArticle(id: $id, input: $input) { id } }
+mutation DeleteArticle($id: ID!) { deleteArticle(id: $id) }
+mutation SubmitArticleForReview($id: ID!) { submitArticleForReview(id: $id) { id status } }
+mutation RequestArticleChanges($id: ID!, $comment: String!) { requestArticleChanges(id: $id, comment: $comment) { id status } }
+mutation PublishArticle($id: ID!) { publishArticle(id: $id) { id status } }
+mutation ScheduleArticle($id: ID!, $scheduledAt: String!) { scheduleArticle(id: $id, scheduledAt: $scheduledAt) { id status } }
+mutation UpdateArticleSchedule($id: ID!, $scheduledAt: String!) { updateArticleSchedule(id: $id, scheduledAt: $scheduledAt) { id status } }
+mutation CancelArticleSchedule($id: ID!) { cancelArticleSchedule(id: $id) { id status } }
+mutation ArchiveArticle($id: ID!) { archiveArticle(id: $id) { id status } }
+mutation RestoreArticle($id: ID!) { restoreArticle(id: $id) { id status } }
+mutation SetArticleBreaking($id: ID!, $enabled: Boolean!) { setArticleBreaking(id: $id, enabled: $enabled) { id isBreaking } }
+mutation SetArticleFeatured($id: ID!, $enabled: Boolean!) { setArticleFeatured(id: $id, enabled: $enabled) { id isFeatured } }

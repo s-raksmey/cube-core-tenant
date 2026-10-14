@@ -1,11 +1,9 @@
-import { EmptyState } from "@/components/dashboard/empty-state";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { ArticlesList } from "@/components/content/articles-list";
+import type { ArticleScope } from "@/lib/apollo/generated/graphql";
 
-export default function ArticlesPage() {
-  return (
-    <div>
-      <PageHeader title="Articles" description="Create and manage workspace articles." />
-      <EmptyState title="No articles yet" description="Article management will appear here." />
-    </div>
-  );
+export default async function ArticlesPage({ searchParams }: { searchParams: Promise<{ scope?: string }> }) {
+  const { scope } = await searchParams;
+  const initialScope: ArticleScope = scope === "my" ? "MY" : scope === "review" ? "REVIEW" : "ALL";
+  return <div><PageHeader title="Articles" description="Create, manage and publish workspace articles." /><ArticlesList initialScope={initialScope} /></div>;
 }
