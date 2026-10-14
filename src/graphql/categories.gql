@@ -1,0 +1,49 @@
+query Categories($search: String) {
+  categories(search: $search) {
+    id
+    slug
+    name
+    translations {
+      locale
+      name
+    }
+    subcategories {
+      id
+      categoryId
+      slug
+      translations {
+        locale
+        name
+      }
+    }
+  }
+}
+
+mutation CreateCategory($input: CreateCategoryInput!) {
+  createCategory(input: $input) {
+    id
+    slug
+    name
+    translations {
+      locale
+      name
+    }
+  }
+}
+
+mutation CreateSubcategory($input: CreateSubcategoryInput!) {
+  createSubcategory(input: $input) {
+    id
+    categoryId
+    slug
+    translations {
+      locale
+      name
+    }
+  }
+}
+
+mutation DeleteCategory($id: ID!) {
+  deleteCategory(id: $id)
+}
+

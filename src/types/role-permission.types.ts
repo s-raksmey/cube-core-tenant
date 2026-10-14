@@ -14,6 +14,17 @@ export const TENANT_SETTINGS_PERMISSION_ROWS = [
   ["BRANDING_UPDATE", "Edit settings"],
 ] as const;
 
+export const TENANT_CATEGORY_PERMISSION_ROWS = [
+  ["CATEGORY_VIEW", "View category"],
+  ["CATEGORY_VIEW_SUBCATEGORY", "View sub category"],
+  ["CATEGORY_CREATE", "Create category"],
+  ["CATEGORY_CREATE_SUBCATEGORY", "Create sub category"],
+  ["CATEGORY_EDIT", "Edit category"],
+  ["CATEGORY_EDIT_SUBCATEGORY", "Edit sub category"],
+  ["CATEGORY_DELETE", "Delete category"],
+  ["CATEGORY_DELETE_SUBCATEGORY", "Delete sub category"],
+] as const;
+
 export const TENANT_PERMISSION_ROLES = ["ADMIN", "EDITOR"] as const;
 
 export type TenantPermissionRole = (typeof TENANT_PERMISSION_ROLES)[number];

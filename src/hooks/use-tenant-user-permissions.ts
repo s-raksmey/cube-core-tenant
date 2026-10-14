@@ -16,6 +16,14 @@ export function useTenantUserPermissions() {
     canSuspendUsers: permissions.has("USERS_SUSPEND"),
     canDeleteUsers: permissions.has("USERS_DELETE"),
     canViewBranding: permissions.has("BRANDING_VIEW"),
+    canViewCategories: permissions.has("CATEGORY_VIEW"),
+    canViewSubcategories: permissions.has("CATEGORY_VIEW_SUBCATEGORY"),
+    canCreateCategories: permissions.has("CATEGORY_CREATE"),
+    canCreateSubcategories: permissions.has("CATEGORY_CREATE_SUBCATEGORY"),
+    canEditCategories: permissions.has("CATEGORY_EDIT"),
+    canEditSubcategories: permissions.has("CATEGORY_EDIT_SUBCATEGORY"),
+    canDeleteCategories: permissions.has("CATEGORY_DELETE"),
+    canDeleteSubcategories: permissions.has("CATEGORY_DELETE_SUBCATEGORY"),
     canUpdateBranding: permissions.has("BRANDING_UPDATE"),
   };
 }
