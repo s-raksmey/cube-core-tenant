@@ -17,6 +17,7 @@ export type TenantUserRow = {
 
 export type TenantUserActions = {
   canEditUsers: boolean;
+  canEditOtherUsers: boolean;
   canChangeRoles: boolean;
   canActivateUsers: boolean;
   canSuspendUsers: boolean;

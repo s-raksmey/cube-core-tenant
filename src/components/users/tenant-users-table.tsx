@@ -115,7 +115,9 @@ export function TenantUsersTable({
               {hasAnyAction ? (
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
-                    {canOpenEdit ? (
+                    {canOpenEdit &&
+                    (user.id === viewerId || actions.canEditOtherUsers ||
+                      actions.canChangeRoles || actions.canSuspendUsers) ? (
                       <Button
                         type="button"
                         variant="ghost"

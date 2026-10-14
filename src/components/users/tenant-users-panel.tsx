@@ -87,6 +87,7 @@ export function TenantUsersPanel() {
           viewerId={viewer.id}
           actions={{
             canEditUsers: permissions.canEditUsers,
+            canEditOtherUsers: permissions.canEditUsers && viewer.role !== "EDITOR",
             canChangeRoles: permissions.canChangeRoles,
             canActivateUsers: permissions.canActivateUsers,
             canSuspendUsers: permissions.canSuspendUsers,
