@@ -4,7 +4,6 @@ import { TenantAuthCard } from "@/components/auth/tenant-auth-card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   loginTenant,
@@ -135,6 +134,13 @@ export function TenantAuthFlow({
     if (activeStep === "landing") router.prefetch("/login");
   }, [router, activeStep]);
 
+  function openLogin() {
+    // Keep the already-rendered tenant shell mounted. The native history API
+    // updates the URL without replacing it with the route's server fallback.
+    setStep("password");
+    window.history.pushState(null, "", "/login");
+  }
+
   function closeForm() {
     if (loading) return;
     setStep("landing");
@@ -142,7 +148,7 @@ export function TenantAuthFlow({
     setCode("");
     setError(null);
     setUseRecoveryCode(false);
-    router.push("/");
+    window.history.pushState(null, "", "/");
     autoSubmitRef.current = false;
   }
 
@@ -197,11 +203,9 @@ export function TenantAuthFlow({
               <p className="max-w-lg text-base leading-relaxed text-muted-foreground sm:text-lg">
                 Secure workspace access for {tenantName} Admin and Editor users.
               </p>
-              <Button size="lg" asChild>
-                <Link href="/login" prefetch>
-                  Get Started
-                  <ArrowRight className="size-4" />
-                </Link>
+              <Button size="lg" onClick={openLogin}>
+                Get Started
+                <ArrowRight className="size-4" />
               </Button>
             </div>
           ) : (
