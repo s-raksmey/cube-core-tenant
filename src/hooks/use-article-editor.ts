@@ -10,6 +10,7 @@ import { useTenantUserPermissions } from "@/hooks/use-tenant-user-permissions";
 import { articleFormInput, articleToForm, emptyArticleForm, type ArticleFormState } from "@/types/article.types";
 import { supportedLocales } from "@/lib/locales";
 import { useConsoleUser } from "@/components/providers/console-user-provider";
+import { articleActions } from "@/lib/article-workflow";
 
 export type SaveMode = "draft" | "submit" | "publish" | "schedule";
 const slugify = (value: string) => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -52,9 +53,7 @@ export function useArticleEditor(id?: string) {
     for (const tag of tagsQuery.data?.tags ?? []) byId.set(tag.id, tag);
     return [...byId.values()];
   }, [article?.tags, tagsQuery.data?.tags]);
-  const canEdit = !id ? permissions.canCreateArticles : Boolean(article &&
-    (permissions.canUpdateAnyArticle || (article.authorId === viewer.id && permissions.canUpdateOwnArticles)) &&
-    (article.status === "DRAFT" || (permissions.canUpdateAnyArticle && ["IN_REVIEW", "PUBLISHED"].includes(article.status))));
+  const canEdit = !id ? permissions.canCreateArticles : Boolean(article && articleActions(article, viewer.id, permissions).edit);
   function patch<K extends keyof ArticleFormState>(key: K, value: ArticleFormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
   }
@@ -68,7 +67,7 @@ export function useArticleEditor(id?: string) {
     setForm((current) => ({ ...current, translations: current.translations.map((item, i) => i === index ? { ...item, ...value } : item) }));
   }
   async function save(mode: SaveMode) {
-    if (busy) return;
+    if (busy || !canEdit) return;
     setError("");
     const input = articleFormInput(form);
     if (!input.title || !input.slug || !input.categoryId || !input.subcategoryId) { setError("Title, slug, category and subcategory are required."); return; }

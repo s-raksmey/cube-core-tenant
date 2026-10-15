@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ArticleMarkdown, ArticleMarkdownEditor } from "@/components/content/article-markdown";
 import { useArticleEditor, type SaveMode } from "@/hooks/use-article-editor";
 import type { ArticleTranslationDraft } from "@/types/article.types";
@@ -19,9 +18,16 @@ export function ArticleEditor({ id }: { id?: string }) {
   const [preview, setPreview] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const [rememberedTags, setRememberedTags] = useState<{ id: string; name: string }[]>([]);
-  if (editor.loading) return <div className="space-y-4"><Skeleton className="h-9 w-48" /><Skeleton className="h-96 w-full" /></div>;
+  if (editor.loading) return <div role="status" className="flex min-h-40 items-center justify-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" aria-hidden="true" />Loading article…</div>;
   if (id && !editor.article) return <p role="alert" className="text-sm text-destructive">{editor.loadError?.message ?? "Article not found"}</p>;
-  if (!editor.canEdit) return <p role="alert" className="text-sm text-muted-foreground">You do not have permission to edit this article in its current status.</p>;
+  if (!editor.canEdit) return <div role="alert" className="space-y-3 rounded-xl border bg-card p-5 text-sm">
+    <p>{editor.article?.status === "PUBLISHED" ? "Unpublish this article before editing its content." :
+      editor.article?.status === "SCHEDULED" ? "Cancel the schedule before editing this article." :
+      editor.article?.status === "IN_REVIEW" ? "Request changes before editing this article." :
+      editor.article?.status === "ARCHIVED" ? "Restore this article to Draft before editing its content." :
+      "You do not have permission to edit this article."}</p>
+    <Button variant="outline" asChild><Link href={id ? `/content/articles/${id}` : "/content/articles"}>View article</Link></Button>
+  </div>;
   const { form, permissions } = editor;
   const selectedTags = [...new Map([...rememberedTags, ...editor.tagOptions].map((tag) => [tag.id, tag])).values()]
     .filter((tag) => form.tagIds.includes(tag.id));
