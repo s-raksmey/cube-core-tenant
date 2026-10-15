@@ -1,17 +1,17 @@
 "use client";
 
-import {
-  CATEGORIES_QUERY,
-  CREATE_CATEGORY,
-  CREATE_SUBCATEGORY,
-  UPDATE_CATEGORY,
-  DELETE_CATEGORY,
-} from "@/lib/apollo/operations";
 import type {
   CreateCategoryInput,
   CreateSubcategoryInput,
   UpdateCategoryInput,
 } from "@/lib/apollo/generated/graphql";
+import {
+  CATEGORIES_QUERY,
+  CREATE_CATEGORY,
+  CREATE_SUBCATEGORY,
+  DELETE_CATEGORY,
+  UPDATE_CATEGORY,
+} from "@/lib/apollo/operations";
 import type { TenantCategory } from "@/types/category.types";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { useCallback, useMemo, useState } from "react";
@@ -24,9 +24,8 @@ export function useTenantCategories() {
     variables: { search: search || null },
   });
   const [runCreateCategory, createCategoryState] = useMutation(CREATE_CATEGORY);
-  const [runCreateSubcategory, createSubcategoryState] = useMutation(
-    CREATE_SUBCATEGORY,
-  );
+  const [runCreateSubcategory, createSubcategoryState] =
+    useMutation(CREATE_SUBCATEGORY);
   const [runUpdateCategory, updateCategoryState] = useMutation(UPDATE_CATEGORY);
   const [runDeleteCategory, deleteCategoryState] = useMutation(DELETE_CATEGORY);
 

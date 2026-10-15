@@ -1,8 +1,8 @@
 "use client";
 
 import { AdminDashboard } from "@/components/dashboard/admin-dashboard";
-import { useConsoleUser } from "@/components/providers/console-user-provider";
 import { EditorDashboard } from "@/components/dashboard/editor-dashboard";
+import { useConsoleUser } from "@/components/providers/console-user-provider";
 
 export function DashboardPageClient() {
   const user = useConsoleUser();

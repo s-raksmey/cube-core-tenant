@@ -16,9 +16,9 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import type { AuthUser } from "@/lib/types";
 import { useTenantSidebarBranding } from "@/hooks/use-tenant-sidebar-branding";
 import { useTenantUserPermissions } from "@/hooks/use-tenant-user-permissions";
+import type { AuthUser } from "@/lib/types";
 import {
   Activity,
   ChevronDown,
@@ -37,7 +37,6 @@ import { useState } from "react";
 const storageBase =
   process.env.NEXT_PUBLIC_GRAPHQL_SERVER_URL?.replace(/\/graphql$/, "") ??
   "http://localhost:4000";
-
 
 type NavItem = {
   title: string;
@@ -80,7 +79,13 @@ export function AppSidebar({ user }: { user: AuthUser }) {
   const [contentOpen, setContentOpen] = useState(
     pathname.startsWith("/content"),
   );
-  const { canViewUsers, canViewBranding, canViewCategories, canViewTags, canViewArticles } = useTenantUserPermissions();
+  const {
+    canViewUsers,
+    canViewBranding,
+    canViewCategories,
+    canViewTags,
+    canViewArticles,
+  } = useTenantUserPermissions();
   const { managementLogoUrl } = useTenantSidebarBranding();
   const items = (user.role === "EDITOR" ? editorNav : adminNav).filter(
     (item) =>
@@ -137,61 +142,65 @@ export function AppSidebar({ user }: { user: AuthUser }) {
                   </SidebarMenuItem>
                 );
               })}
-              {canViewArticles || canViewCategories || canViewTags ? <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={pathname.startsWith("/content")}
-                  tooltip="Content"
-                  onClick={() => setContentOpen((open) => !open)}
-                  className="text-sidebar-foreground hover:text-sidebar-accent-foreground data-active:text-sidebar-accent-foreground"
-                >
-                  <FileText />
-                  <span>Content</span>
-                  <ChevronDown
-                    className={`ml-auto transition-transform group-data-[collapsible=icon]:hidden ${contentOpen ? "rotate-180" : ""}`}
-                  />
-                </SidebarMenuButton>
-                {contentOpen ? (
-                  <SidebarMenuSub>
-                    {canViewArticles ? <SidebarMenuSubItem>
-                      <SidebarMenuSubButton
-                        asChild
-                        isActive={pathname === "/content/articles"}
-                      >
-                        <Link href="/content/articles">
-                          <FileText />
-                          <span>Articles</span>
-                        </Link>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem> : null}
-                    {canViewCategories ? (
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton
-                          asChild
-                          isActive={pathname === "/content/categories"}
-                        >
-                          <Link href="/content/categories">
-                            <Tags />
-                            <span>Categories</span>
-                          </Link>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    ) : null}
-                    {canViewTags ? (
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton
-                        asChild
-                        isActive={pathname === "/content/tags"}
-                      >
-                        <Link href="/content/tags">
-                          <Tags />
-                          <span>Tags</span>
-                        </Link>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    ) : null}
-                  </SidebarMenuSub>
-                ) : null}
-              </SidebarMenuItem> : null}
+              {canViewArticles || canViewCategories || canViewTags ? (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    isActive={pathname.startsWith("/content")}
+                    tooltip="Content"
+                    onClick={() => setContentOpen((open) => !open)}
+                    className="text-sidebar-foreground hover:text-sidebar-accent-foreground data-active:text-sidebar-accent-foreground"
+                  >
+                    <FileText />
+                    <span>Content</span>
+                    <ChevronDown
+                      className={`ml-auto transition-transform group-data-[collapsible=icon]:hidden ${contentOpen ? "rotate-180" : ""}`}
+                    />
+                  </SidebarMenuButton>
+                  {contentOpen ? (
+                    <SidebarMenuSub>
+                      {canViewArticles ? (
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={pathname === "/content/articles"}
+                          >
+                            <Link href="/content/articles">
+                              <FileText />
+                              <span>Articles</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ) : null}
+                      {canViewCategories ? (
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={pathname === "/content/categories"}
+                          >
+                            <Link href="/content/categories">
+                              <Tags />
+                              <span>Categories</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ) : null}
+                      {canViewTags ? (
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={pathname === "/content/tags"}
+                          >
+                            <Link href="/content/tags">
+                              <Tags />
+                              <span>Tags</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ) : null}
+                    </SidebarMenuSub>
+                  ) : null}
+                </SidebarMenuItem>
+              ) : null}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

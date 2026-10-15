@@ -16,9 +16,9 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import type { AuthUser } from "@/lib/types";
 import { clearTenantSession } from "@/lib/auth/session-actions";
 import { tenantDocumentTitleStorageKey } from "@/lib/tenant-document-title";
+import type { AuthUser } from "@/lib/types";
 import { useApolloClient } from "@apollo/client/react";
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -108,7 +108,11 @@ export function ConsoleShell({
             >
               Cancel
             </Button>
-            <Button type="button" disabled={loggingOut} onClick={() => void confirmLogout()}>
+            <Button
+              type="button"
+              disabled={loggingOut}
+              onClick={() => void confirmLogout()}
+            >
               <LogOut className="size-4" />
               {loggingOut ? "Logging out…" : "Log out"}
             </Button>

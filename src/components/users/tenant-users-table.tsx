@@ -16,7 +16,10 @@ import type {
   TenantUserActions,
   TenantUserRow,
 } from "@/types/tenant-user.types";
-export type { TenantUserActions, TenantUserRow } from "@/types/tenant-user.types";
+export type {
+  TenantUserActions,
+  TenantUserRow,
+} from "@/types/tenant-user.types";
 
 type TenantUsersTableProps = {
   users: TenantUserRow[];
@@ -116,8 +119,10 @@ export function TenantUsersTable({
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
                     {canOpenEdit &&
-                    (user.id === viewerId || actions.canEditOtherUsers ||
-                      actions.canChangeRoles || actions.canSuspendUsers) ? (
+                    (user.id === viewerId ||
+                      actions.canEditOtherUsers ||
+                      actions.canChangeRoles ||
+                      actions.canSuspendUsers) ? (
                       <Button
                         type="button"
                         variant="ghost"
@@ -163,8 +168,8 @@ export function TenantUsersTable({
                             title="Reset password"
                             disabled={
                               loadingPasswordReset ||
-                              user.status !== "ACTIVE" &&
-                              user.status !== "LOCKED"
+                              (user.status !== "ACTIVE" &&
+                                user.status !== "LOCKED")
                             }
                             onClick={() => onResetPassword(user)}
                           >

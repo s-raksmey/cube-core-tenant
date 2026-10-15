@@ -13,8 +13,20 @@ import { Input } from "@/components/ui/input";
 import { useTenantCategories } from "@/hooks/use-tenant-categories";
 import { useTenantUserPermissions } from "@/hooks/use-tenant-user-permissions";
 import { supportedLocales } from "@/lib/locales";
-import { categoryToFormState, type CategoryTarget, type TenantCategory, type TranslationDraft } from "@/types/category.types";
-import { ChevronDown, ChevronRight, FolderPlus, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  categoryToFormState,
+  type CategoryTarget,
+  type TenantCategory,
+  type TranslationDraft,
+} from "@/types/category.types";
+import {
+  ChevronDown,
+  ChevronRight,
+  FolderPlus,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
 
 const defaultTranslation = (): TranslationDraft => ({ locale: "en", name: "" });
@@ -30,16 +42,23 @@ function formatSlug(value: string) {
 /** Tenant-scoped category list and translation-aware create workflow. */
 export function CategoriesPanel() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<TenantCategory | null>(null);
+  const [editingCategory, setEditingCategory] = useState<TenantCategory | null>(
+    null,
+  );
   const [slug, setSlug] = useState("");
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
   const [translations, setTranslations] = useState<TranslationDraft[]>([
     defaultTranslation(),
   ]);
-  const [subcategoryTarget, setSubcategoryTarget] = useState<CategoryTarget | null>(null);
+  const [subcategoryTarget, setSubcategoryTarget] =
+    useState<CategoryTarget | null>(null);
   const [subcategorySlug, setSubcategorySlug] = useState("");
-  const [subcategoryTranslations, setSubcategoryTranslations] = useState<TranslationDraft[]>([defaultTranslation()]);
-  const [expandedCategoryIds, setExpandedCategoryIds] = useState<Set<string>>(() => new Set());
+  const [subcategoryTranslations, setSubcategoryTranslations] = useState<
+    TranslationDraft[]
+  >([defaultTranslation()]);
+  const [expandedCategoryIds, setExpandedCategoryIds] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   const {
     searchInput,
@@ -69,9 +88,11 @@ export function CategoriesPanel() {
     canCreateSubcategories || canEditCategories || canDeleteCategories;
   const availableLocales = useMemo(
     () =>
-      supportedLocales.filter((locale) => locale.code !== "th").filter(
-        (locale) => !translations.some((item) => item.locale === locale.code),
-      ),
+      supportedLocales
+        .filter((locale) => locale.code !== "th")
+        .filter(
+          (locale) => !translations.some((item) => item.locale === locale.code),
+        ),
     [translations],
   );
   const hasIncompleteTranslation = translations.some(
@@ -82,7 +103,10 @@ export function CategoriesPanel() {
       supportedLocales
         .filter((locale) => locale.code !== "th")
         .filter(
-          (locale) => !subcategoryTranslations.some((item) => item.locale === locale.code),
+          (locale) =>
+            !subcategoryTranslations.some(
+              (item) => item.locale === locale.code,
+            ),
         ),
     [subcategoryTranslations],
   );
@@ -114,7 +138,9 @@ export function CategoriesPanel() {
   function updateTranslation(index: number, update: Partial<TranslationDraft>) {
     setTranslations((current) =>
       current.map((translation, translationIndex) =>
-        translationIndex === index ? { ...translation, ...update } : translation,
+        translationIndex === index
+          ? { ...translation, ...update }
+          : translation,
       ),
     );
   }
@@ -131,10 +157,15 @@ export function CategoriesPanel() {
     setSubcategoryTranslations([defaultTranslation()]);
   }
 
-  function updateSubcategoryTranslation(index: number, update: Partial<TranslationDraft>) {
+  function updateSubcategoryTranslation(
+    index: number,
+    update: Partial<TranslationDraft>,
+  ) {
     setSubcategoryTranslations((current) =>
       current.map((translation, translationIndex) =>
-        translationIndex === index ? { ...translation, ...update } : translation,
+        translationIndex === index
+          ? { ...translation, ...update }
+          : translation,
       ),
     );
   }
@@ -143,14 +174,16 @@ export function CategoriesPanel() {
 
     try {
       await createSubcategory({
-            categoryId: subcategoryTarget.id,
-            slug: subcategorySlug,
-            translations: subcategoryTranslations.map((translation) => ({
-              ...translation,
-              name: translation.name.trim(),
-            })),
+        categoryId: subcategoryTarget.id,
+        slug: subcategorySlug,
+        translations: subcategoryTranslations.map((translation) => ({
+          ...translation,
+          name: translation.name.trim(),
+        })),
       });
-      setExpandedCategoryIds((current) => new Set(current).add(subcategoryTarget.id));
+      setExpandedCategoryIds((current) =>
+        new Set(current).add(subcategoryTarget.id),
+      );
       closeSubcategoryDialog();
     } catch {
       // The operation error is presented in the dialog.
@@ -185,23 +218,24 @@ export function CategoriesPanel() {
             }}
             placeholder="Search categories"
           />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={applySearch}
-          >
+          <Button type="button" variant="outline" onClick={applySearch}>
             Search
           </Button>
         </div>
         {canCreateCategories ? (
-          <Button className="sm:ml-auto" onClick={() => setIsCreateDialogOpen(true)}>
+          <Button
+            className="sm:ml-auto"
+            onClick={() => setIsCreateDialogOpen(true)}
+          >
             <Plus />
             Create category
           </Button>
         ) : null}
       </div>
 
-      {error ? <p className="text-sm text-destructive">{error.message}</p> : null}
+      {error ? (
+        <p className="text-sm text-destructive">{error.message}</p>
+      ) : null}
 
       <div className="overflow-hidden rounded-xl border bg-card">
         <table className="w-full text-sm">
@@ -223,8 +257,12 @@ export function CategoriesPanel() {
             ) : null}
             {!loading && categories.length === 0 ? (
               <tr>
-                <td colSpan={showActions ? 4 : 3} className="p-8 text-center text-muted-foreground">
-                  No categories yet. Create your first category to organize your content.
+                <td
+                  colSpan={showActions ? 4 : 3}
+                  className="p-8 text-center text-muted-foreground"
+                >
+                  No categories yet. Create your first category to organize your
+                  content.
                 </td>
               </tr>
             ) : null}
@@ -244,7 +282,8 @@ export function CategoriesPanel() {
                               onClick={() =>
                                 setExpandedCategoryIds((current) => {
                                   const next = new Set(current);
-                                  if (next.has(category.id)) next.delete(category.id);
+                                  if (next.has(category.id))
+                                    next.delete(category.id);
                                   else next.add(category.id);
                                   return next;
                                 })
@@ -268,7 +307,9 @@ export function CategoriesPanel() {
                         <td>{category.slug}</td>
                         <td>
                           {category.translations
-                            .map((translation) => translation.locale.toUpperCase())
+                            .map((translation) =>
+                              translation.locale.toUpperCase(),
+                            )
                             .join(" · ")}
                         </td>
                         {showActions ? (
@@ -292,7 +333,10 @@ export function CategoriesPanel() {
                                   title="Add subcategory"
                                   aria-label={`Add a subcategory to ${categoryName}`}
                                   onClick={() =>
-                                    openSubcategoryDialog({ id: category.id, name: categoryName })
+                                    openSubcategoryDialog({
+                                      id: category.id,
+                                      name: categoryName,
+                                    })
                                   }
                                 >
                                   <FolderPlus />
@@ -304,7 +348,9 @@ export function CategoriesPanel() {
                                   size="icon"
                                   title="Delete category"
                                   aria-label={`Delete ${categoryName}`}
-                                  onClick={() => void deleteCategory(category.id)}
+                                  onClick={() =>
+                                    void deleteCategory(category.id)
+                                  }
                                 >
                                   <Trash2 className="text-destructive" />
                                 </Button>
@@ -316,14 +362,21 @@ export function CategoriesPanel() {
                       {canViewSubcategories && isExpanded ? (
                         category.subcategories.length ? (
                           category.subcategories.map((subcategory) => (
-                            <tr key={subcategory.id} className="border-b bg-muted/25 text-muted-foreground">
+                            <tr
+                              key={subcategory.id}
+                              className="border-b bg-muted/25 text-muted-foreground"
+                            >
                               <td className="py-2.5 pr-3 pl-10 font-medium text-foreground">
-                                ↳ {subcategory.translations[0]?.name ?? subcategory.slug}
+                                ↳{" "}
+                                {subcategory.translations[0]?.name ??
+                                  subcategory.slug}
                               </td>
                               <td>{subcategory.slug}</td>
                               <td>
                                 {subcategory.translations
-                                  .map((translation) => translation.locale.toUpperCase())
+                                  .map((translation) =>
+                                    translation.locale.toUpperCase(),
+                                  )
                                   .join(" · ")}
                               </td>
                               {showActions ? <td /> : null}
@@ -331,7 +384,10 @@ export function CategoriesPanel() {
                           ))
                         ) : (
                           <tr className="border-b bg-muted/25">
-                            <td colSpan={showActions ? 4 : 3} className="px-10 py-3 text-sm text-muted-foreground">
+                            <td
+                              colSpan={showActions ? 4 : 3}
+                              className="px-10 py-3 text-sm text-muted-foreground"
+                            >
                               No subcategories yet.
                             </td>
                           </tr>
@@ -348,7 +404,9 @@ export function CategoriesPanel() {
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent className="gap-5 p-0 sm:max-w-md">
           <DialogHeader className="gap-1 px-5 pt-5">
-            <DialogTitle>{editingCategory ? "Edit category" : "Create category"}</DialogTitle>
+            <DialogTitle>
+              {editingCategory ? "Edit category" : "Create category"}
+            </DialogTitle>
             <DialogDescription>
               Start with the English name, then add translations when needed.
             </DialogDescription>
@@ -358,7 +416,9 @@ export function CategoriesPanel() {
             <label className="grid gap-1.5">
               <span className="text-sm font-medium">
                 Category name <span className="text-destructive">*</span>
-                <span className="ml-1 font-normal text-muted-foreground">(English)</span>
+                <span className="ml-1 font-normal text-muted-foreground">
+                  (English)
+                </span>
               </span>
               <Input
                 value={translations[0].name}
@@ -375,7 +435,10 @@ export function CategoriesPanel() {
             </label>
 
             {translations.length > 1 ? (
-              <section className="space-y-2" aria-label="Additional translations">
+              <section
+                className="space-y-2"
+                aria-label="Additional translations"
+              >
                 <div>
                   <h3 className="text-sm font-medium">Translations</h3>
                   <p className="text-xs text-muted-foreground">
@@ -389,7 +452,10 @@ export function CategoriesPanel() {
                       key={translation.locale}
                       className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:grid-cols-[9.5rem_minmax(0,1fr)_auto]"
                     >
-                      <label className="sr-only" htmlFor={`category-locale-${translationIndex}`}>
+                      <label
+                        className="sr-only"
+                        htmlFor={`category-locale-${translationIndex}`}
+                      >
                         Language for translation {translationIndex}
                       </label>
                       <select
@@ -397,32 +463,43 @@ export function CategoriesPanel() {
                         className="h-9 rounded-md border bg-background px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
                         value={translation.locale}
                         onChange={(event) =>
-                          updateTranslation(translationIndex, { locale: event.target.value })
+                          updateTranslation(translationIndex, {
+                            locale: event.target.value,
+                          })
                         }
                       >
                         {supportedLocales
-                          .filter((locale) => locale.code !== "en" && locale.code !== "th")
+                          .filter(
+                            (locale) =>
+                              locale.code !== "en" && locale.code !== "th",
+                          )
                           .map((locale) => (
                             <option
                               key={locale.code}
                               value={locale.code}
                               disabled={translations.some(
                                 (item, itemIndex) =>
-                                  itemIndex !== translationIndex && item.locale === locale.code,
+                                  itemIndex !== translationIndex &&
+                                  item.locale === locale.code,
                               )}
                             >
                               {locale.label} ({locale.code})
                             </option>
                           ))}
                       </select>
-                      <label className="sr-only" htmlFor={`category-name-${translationIndex}`}>
+                      <label
+                        className="sr-only"
+                        htmlFor={`category-name-${translationIndex}`}
+                      >
                         Category name in {translation.locale}
                       </label>
                       <Input
                         id={`category-name-${translationIndex}`}
                         value={translation.name}
                         onChange={(event) =>
-                          updateTranslation(translationIndex, { name: event.target.value })
+                          updateTranslation(translationIndex, {
+                            name: event.target.value,
+                          })
                         }
                         placeholder="Translation"
                       />
@@ -433,7 +510,9 @@ export function CategoriesPanel() {
                         className="text-muted-foreground hover:text-destructive"
                         onClick={() =>
                           setTranslations((current) =>
-                            current.filter((_, itemIndex) => itemIndex !== translationIndex),
+                            current.filter(
+                              (_, itemIndex) => itemIndex !== translationIndex,
+                            ),
                           )
                         }
                         aria-label={`Remove ${translation.locale} translation`}
@@ -482,7 +561,9 @@ export function CategoriesPanel() {
             </label>
 
             {createCategoryError ? (
-              <p className="text-sm text-destructive">{createCategoryError.message}</p>
+              <p className="text-sm text-destructive">
+                {createCategoryError.message}
+              </p>
             ) : null}
           </div>
 
@@ -491,10 +572,19 @@ export function CategoriesPanel() {
               Cancel
             </Button>
             <Button
-              disabled={creatingCategory || updatingCategory || !slug || hasIncompleteTranslation}
+              disabled={
+                creatingCategory ||
+                updatingCategory ||
+                !slug ||
+                hasIncompleteTranslation
+              }
               onClick={() => void submit()}
             >
-              {creatingCategory || updatingCategory ? "Saving…" : editingCategory ? "Save changes" : "Create category"}
+              {creatingCategory || updatingCategory
+                ? "Saving…"
+                : editingCategory
+                  ? "Save changes"
+                  : "Create category"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -510,7 +600,11 @@ export function CategoriesPanel() {
           <DialogHeader className="gap-1 px-5 pt-5">
             <DialogTitle>Create subcategory</DialogTitle>
             <DialogDescription>
-              Create a subcategory under <span className="font-medium text-foreground">{subcategoryTarget?.name}</span>.
+              Create a subcategory under{" "}
+              <span className="font-medium text-foreground">
+                {subcategoryTarget?.name}
+              </span>
+              .
             </DialogDescription>
           </DialogHeader>
 
@@ -518,7 +612,9 @@ export function CategoriesPanel() {
             <label className="grid gap-1.5">
               <span className="text-sm font-medium">
                 Subcategory name <span className="text-destructive">*</span>
-                <span className="ml-1 font-normal text-muted-foreground">(English)</span>
+                <span className="ml-1 font-normal text-muted-foreground">
+                  (English)
+                </span>
               </span>
               <Input
                 value={subcategoryTranslations[0].name}
@@ -533,11 +629,15 @@ export function CategoriesPanel() {
             </label>
 
             {subcategoryTranslations.length > 1 ? (
-              <section className="space-y-2" aria-label="Subcategory translations">
+              <section
+                className="space-y-2"
+                aria-label="Subcategory translations"
+              >
                 <div>
                   <h3 className="text-sm font-medium">Translations</h3>
                   <p className="text-xs text-muted-foreground">
-                    Add a localized subcategory name for readers using another language.
+                    Add a localized subcategory name for readers using another
+                    language.
                   </p>
                 </div>
                 {subcategoryTranslations.slice(1).map((translation, index) => {
@@ -558,14 +658,18 @@ export function CategoriesPanel() {
                         aria-label={`Language for subcategory translation ${translationIndex}`}
                       >
                         {supportedLocales
-                          .filter((locale) => locale.code !== "en" && locale.code !== "th")
+                          .filter(
+                            (locale) =>
+                              locale.code !== "en" && locale.code !== "th",
+                          )
                           .map((locale) => (
                             <option
                               key={locale.code}
                               value={locale.code}
                               disabled={subcategoryTranslations.some(
                                 (item, itemIndex) =>
-                                  itemIndex !== translationIndex && item.locale === locale.code,
+                                  itemIndex !== translationIndex &&
+                                  item.locale === locale.code,
                               )}
                             >
                               {locale.label} ({locale.code})
@@ -589,7 +693,9 @@ export function CategoriesPanel() {
                         className="text-muted-foreground hover:text-destructive"
                         onClick={() =>
                           setSubcategoryTranslations((current) =>
-                            current.filter((_, itemIndex) => itemIndex !== translationIndex),
+                            current.filter(
+                              (_, itemIndex) => itemIndex !== translationIndex,
+                            ),
                           )
                         }
                         aria-label={`Remove ${translation.locale} translation`}
@@ -625,7 +731,9 @@ export function CategoriesPanel() {
               </span>
               <Input
                 value={subcategorySlug}
-                onChange={(event) => setSubcategorySlug(formatSlug(event.target.value))}
+                onChange={(event) =>
+                  setSubcategorySlug(formatSlug(event.target.value))
+                }
                 placeholder="Created from the English name"
                 autoComplete="off"
               />
@@ -635,7 +743,9 @@ export function CategoriesPanel() {
             </label>
 
             {createSubcategoryError ? (
-              <p className="text-sm text-destructive">{createSubcategoryError.message}</p>
+              <p className="text-sm text-destructive">
+                {createSubcategoryError.message}
+              </p>
             ) : null}
           </div>
 
@@ -645,7 +755,9 @@ export function CategoriesPanel() {
             </Button>
             <Button
               disabled={
-                creatingSubcategory || hasIncompleteSubcategoryTranslation || !subcategorySlug
+                creatingSubcategory ||
+                hasIncompleteSubcategoryTranslation ||
+                !subcategorySlug
               }
               onClick={() => void submitSubcategory()}
             >
@@ -657,28 +769,3 @@ export function CategoriesPanel() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

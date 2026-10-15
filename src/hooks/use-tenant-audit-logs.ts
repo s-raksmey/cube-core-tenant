@@ -1,7 +1,7 @@
 "use client";
 
-import { TENANT_AUDIT_LOGS_QUERY } from "@/lib/apollo/operations";
 import type { TenantAuditLogsQuery } from "@/lib/apollo/generated/graphql";
+import { TENANT_AUDIT_LOGS_QUERY } from "@/lib/apollo/operations";
 import type { TenantAuditLogPage } from "@/types/audit-log.types";
 import { useQuery } from "@apollo/client/react";
 import { useState } from "react";

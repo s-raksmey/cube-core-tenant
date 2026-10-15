@@ -4,8 +4,8 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { TenantPermissionSummaryCard } from "@/components/roles/tenant-permission-summary-card";
 import { useTenantRolePermissionSummary } from "@/hooks/use-tenant-role-permission-summary";
 import {
-  TENANT_CATEGORY_PERMISSION_ROWS,
   TENANT_ARTICLE_PERMISSION_ROWS,
+  TENANT_CATEGORY_PERMISSION_ROWS,
   TENANT_SETTINGS_PERMISSION_ROWS,
   TENANT_USER_PERMISSION_ROWS,
 } from "@/types/role-permission.types";

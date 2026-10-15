@@ -1,8 +1,10 @@
 "use client";
 
 import { BrandingAssetCard } from "@/components/branding/branding-asset-card";
-import { BRANDING_ASSETS, BRANDING_FIELDS } from "@/components/branding/branding-config";
-import type { BrandingAsset } from "@/types/branding.types";
+import {
+  BRANDING_ASSETS,
+  BRANDING_FIELDS,
+} from "@/components/branding/branding-config";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,10 +14,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useTenantUserPermissions } from "@/hooks/use-tenant-user-permissions";
 import { useTenantBranding } from "@/hooks/use-tenant-branding";
+import { useTenantUserPermissions } from "@/hooks/use-tenant-user-permissions";
+import type { BrandingAsset } from "@/types/branding.types";
 import { useState } from "react";
-
 
 type PendingAssetAction =
   | { type: "replace"; asset: BrandingAsset; file: File }
@@ -36,8 +38,14 @@ export function TenantBrandingPanel() {
     canViewBranding: canView,
     canUpdateBranding: canEdit,
   } = useTenantUserPermissions();
-  const { data, loading, error, refetch, updateBranding: update, saving } =
-    useTenantBranding({ canView: !permissionsLoading && canView });
+  const {
+    data,
+    loading,
+    error,
+    refetch,
+    updateBranding: update,
+    saving,
+  } = useTenantBranding({ canView: !permissionsLoading && canView });
   const [message, setMessage] = useState<string | null>(null);
   const [changes, setChanges] = useState<
     Partial<Record<BrandingAsset, File | null>>

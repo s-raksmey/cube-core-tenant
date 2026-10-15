@@ -23,11 +23,17 @@ export type CategoryFormState = {
   translations: TranslationDraft[];
 };
 
-export function categoryToFormState(category: TenantCategory): CategoryFormState {
-  const translations = category.translations.map((translation) => ({ ...translation }));
+export function categoryToFormState(
+  category: TenantCategory,
+): CategoryFormState {
+  const translations = category.translations.map((translation) => ({
+    ...translation,
+  }));
   return {
     slug: category.slug,
-    translations: translations.some((translation) => translation.locale === "en")
+    translations: translations.some(
+      (translation) => translation.locale === "en",
+    )
       ? translations
       : [{ locale: "en", name: category.name }, ...translations],
   };

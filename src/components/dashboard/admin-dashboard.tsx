@@ -6,8 +6,6 @@ import { EmptyState } from "@/components/dashboard/empty-state";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { StatusBadge } from "@/components/dashboard/status-badge";
-import { useTenantDashboardData } from "@/hooks/use-tenant-dashboard-data";
-import { formatBytes } from "@/lib/format-bytes";
 import { TenantLandingHero } from "@/components/dashboard/tenant-landing-hero";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,8 +16,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { AuthUser } from "@/lib/types";
+import { useTenantDashboardData } from "@/hooks/use-tenant-dashboard-data";
 import { useTenantUserPermissions } from "@/hooks/use-tenant-user-permissions";
+import { formatBytes } from "@/lib/format-bytes";
+import type { AuthUser } from "@/lib/types";
 import { FileText, HardDrive, ShieldCheck, Users } from "lucide-react";
 
 export function AdminDashboard({ user }: { user: AuthUser }) {

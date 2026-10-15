@@ -4,8 +4,7 @@ import { useMemo, useState, type SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { ARTICLE_FOR_EDIT_QUERY, CATEGORIES_QUERY, TAGS_QUERY, CREATE_ARTICLE, UPDATE_ARTICLE,
-  SUBMIT_ARTICLE_FOR_REVIEW, PUBLISH_ARTICLE, SCHEDULE_ARTICLE,
-  SET_ARTICLE_BREAKING, SET_ARTICLE_FEATURED } from "@/lib/apollo/operations";
+  SUBMIT_ARTICLE_FOR_REVIEW, PUBLISH_ARTICLE, SCHEDULE_ARTICLE } from "@/lib/apollo/operations";
 import { useTenantUserPermissions } from "@/hooks/use-tenant-user-permissions";
 import { articleFormInput, articleToForm, emptyArticleForm, type ArticleFormState } from "@/types/article.types";
 import { supportedLocales } from "@/lib/locales";
@@ -28,8 +27,6 @@ export function useArticleEditor(id?: string) {
   const [submit] = useMutation(SUBMIT_ARTICLE_FOR_REVIEW);
   const [publish] = useMutation(PUBLISH_ARTICLE);
   const [schedule] = useMutation(SCHEDULE_ARTICLE);
-  const [setBreaking] = useMutation(SET_ARTICLE_BREAKING);
-  const [setFeatured] = useMutation(SET_ARTICLE_FEATURED);
   const [draft, setDraft] = useState<{ articleId: string | null; form: ArticleFormState } | null>(null);
   const [manualSlug, setManualSlug] = useState(Boolean(id));
   const [scheduledAt, setScheduledAt] = useState("");
@@ -53,7 +50,8 @@ export function useArticleEditor(id?: string) {
     for (const tag of tagsQuery.data?.tags ?? []) byId.set(tag.id, tag);
     return [...byId.values()];
   }, [article?.tags, tagsQuery.data?.tags]);
-  const canEdit = !id ? permissions.canCreateArticles : Boolean(article && articleActions(article, viewer.id, permissions).edit);
+  const canEdit = !id ? permissions.canViewArticles && permissions.canCreateArticles :
+    Boolean(article && articleActions(article, viewer.id, viewer.role, permissions).edit);
   function patch<K extends keyof ArticleFormState>(key: K, value: ArticleFormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
   }
@@ -69,7 +67,7 @@ export function useArticleEditor(id?: string) {
   async function save(mode: SaveMode) {
     if (busy || !canEdit) return;
     setError("");
-    const input = articleFormInput(form);
+    const input = articleFormInput(form, permissions);
     if (!input.title || !input.slug || !input.categoryId || !input.subcategoryId) { setError("Title, slug, category and subcategory are required."); return; }
     if (mode !== "draft" && !input.content.trim()) { setError("Content is required before submission or publication."); return; }
     if (form.translations.some((item) => !item.title.trim() || !item.content.trim()) || new Set(form.translations.map((item) => item.locale)).size !== form.translations.length) {
@@ -83,8 +81,6 @@ export function useArticleEditor(id?: string) {
       const articleId = id ?? (await create({ variables: { input } })).data?.createArticle.id;
       if (!articleId) throw new Error("Article was not created");
       if (id) await update({ variables: { id: articleId, input } });
-      if (permissions.canSetBreakingArticles && form.isBreaking !== (article?.isBreaking ?? false)) await setBreaking({ variables: { id: articleId, enabled: form.isBreaking } });
-      if (permissions.canSetFeaturedArticles && form.isFeatured !== (article?.isFeatured ?? false)) await setFeatured({ variables: { id: articleId, enabled: form.isFeatured } });
       if (mode === "submit") await submit({ variables: { id: articleId } });
       if (mode === "publish") await publish({ variables: { id: articleId } });
       if (mode === "schedule") await schedule({ variables: { id: articleId, scheduledAt: `${scheduledAt}Z` } });

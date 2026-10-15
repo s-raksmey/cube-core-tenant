@@ -75,7 +75,9 @@ export function TenantPermissionSummaryCard({
             {TENANT_PERMISSION_ROLES.map((role) => (
               <div key={role} className="flex justify-center">
                 <ReadOnlySwitch
-                  checked={permissionsByRole.get(role)?.has(permission) ?? false}
+                  checked={
+                    permissionsByRole.get(role)?.has(permission) ?? false
+                  }
                   label={label}
                   role={role}
                 />

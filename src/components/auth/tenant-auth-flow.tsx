@@ -2,17 +2,17 @@
 
 import { TenantAuthCard } from "@/components/auth/tenant-auth-card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
-import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
 import {
   loginTenant,
   verifyTenantLoginTotp,
   verifyTenantRecoveryCode,
   verifyTenantTotpEnrollment,
 } from "@/lib/auth/session-actions";
-import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { TenantAuthChallenge, TenantAuthStep } from "@/types/auth.types";
+import { ArrowRight } from "lucide-react";
+import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
 type Step = TenantAuthStep;
 type ChallengeState = TenantAuthChallenge;
@@ -80,7 +80,10 @@ export function TenantAuthFlow({
     setLoading(true);
     setError(null);
     try {
-      const input = { challengeToken: challenge.challengeToken, code: nextCode };
+      const input = {
+        challengeToken: challenge.challengeToken,
+        code: nextCode,
+      };
       const result = recovery
         ? await verifyTenantRecoveryCode(input)
         : activeStep === "enroll"

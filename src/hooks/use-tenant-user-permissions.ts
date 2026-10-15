@@ -38,6 +38,7 @@ export function useTenantUserPermissions() {
     canDeleteArchivedArticles: permissions.has("ARTICLE_DELETE_ARCHIVED"),
     canSubmitArticles: permissions.has("ARTICLE_SUBMIT"),
     canReviewArticles: permissions.has("ARTICLE_REVIEW"),
+    canRequestArticleChanges: permissions.has("ARTICLE_REQUEST_CHANGES"),
     canPublishArticles: permissions.has("ARTICLE_PUBLISH"),
     canUnpublishArticles: permissions.has("ARTICLE_UNPUBLISH"),
     canScheduleArticles: permissions.has("ARTICLE_SCHEDULE"),

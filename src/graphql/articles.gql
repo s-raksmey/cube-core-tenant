@@ -1,6 +1,6 @@
 query Articles($search: String, $status: ArticleStatus, $categoryId: ID, $scope: ArticleScope, $page: Int, $pageSize: Int) {
   articles(search: $search, status: $status, categoryId: $categoryId, scope: $scope, page: $page, pageSize: $pageSize) {
-    items { id title status categoryName authorId authorName isBreaking isFeatured featuredImageUrl updatedAt }
+    items { id title status categoryName authorId authorName authorRole isBreaking isFeatured featuredImageUrl updatedAt }
     total page pageSize
   }
 }
@@ -8,7 +8,7 @@ query Articles($search: String, $status: ArticleStatus, $categoryId: ID, $scope:
 query Article($id: ID!) {
   article(id: $id) {
     id title slug summary content status categoryId categoryName subcategoryId subcategoryName
-    authorId authorName isBreaking isFeatured featuredImageUrl
+    authorId authorName authorRole isBreaking isFeatured featuredImageUrl
     scheduledAt publishedAt
     tags { id name }
     translations { locale title summary content }
@@ -18,7 +18,7 @@ query Article($id: ID!) {
 
 query ArticleForEdit($id: ID!) {
   article(id: $id) {
-    id title slug summary content status categoryId subcategoryId authorId
+    id title slug summary content status categoryId subcategoryId authorId authorRole
     isBreaking isFeatured featuredImageUrl
     tags { id name }
     translations { locale title summary content }

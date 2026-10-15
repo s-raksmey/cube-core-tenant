@@ -244,28 +244,30 @@ export function TenantUserDialogs(props: TenantUserDialogsProps) {
               {activationTarget?.status === "ACTIVE"
                 ? "Reactivate account and reset 2FA?"
                 : activationLookupFailed
-                ? "Could not retrieve the activation link"
-                : activationLinkUnavailable
-                  ? "No existing link is available"
-                  : "Regenerate activation link?"}
+                  ? "Could not retrieve the activation link"
+                  : activationLinkUnavailable
+                    ? "No existing link is available"
+                    : "Regenerate activation link?"}
             </DialogTitle>
             <DialogDescription>
-              {activationTarget?.status === "ACTIVE"
-                ? <>
-                    This will revoke active sessions, clear the existing 2FA
-                    setup and recovery codes, and move{" "}
-                    <span className="font-medium text-foreground">
-                      {activationTarget?.firstName} {activationTarget?.lastName}
-                    </span>{" "}
-                    ({activationTarget?.email}) back to pending activation.
-                    Their username and password will be cleared; they will set
-                    them again and scan a new QR code.
-                  </>
-                : activationLookupFailed
-                ? "The existing link was not changed. Retry to view it, or regenerate a replacement link."
-                : activationLinkUnavailable
-                  ? "The existing link has expired, was used, or cannot be recovered. Generate a new single-use activation link for this pending user."
-                  : "The existing activation link will be revoked. Only the new single-use link will work."}
+              {activationTarget?.status === "ACTIVE" ? (
+                <>
+                  This will revoke active sessions, clear the existing 2FA setup
+                  and recovery codes, and move{" "}
+                  <span className="font-medium text-foreground">
+                    {activationTarget?.firstName} {activationTarget?.lastName}
+                  </span>{" "}
+                  ({activationTarget?.email}) back to pending activation. Their
+                  username and password will be cleared; they will set them
+                  again and scan a new QR code.
+                </>
+              ) : activationLookupFailed ? (
+                "The existing link was not changed. Retry to view it, or regenerate a replacement link."
+              ) : activationLinkUnavailable ? (
+                "The existing link has expired, was used, or cannot be recovered. Generate a new single-use activation link for this pending user."
+              ) : (
+                "The existing activation link will be revoked. Only the new single-use link will work."
+              )}
             </DialogDescription>
           </DialogHeader>
           {formError ? (
@@ -347,9 +349,9 @@ export function TenantUserDialogs(props: TenantUserDialogsProps) {
                 variant="outline"
                 size="icon"
                 onClick={() => {
-                  void navigator.clipboard.writeText(linkResult.url).then(() =>
-                    setLinkCopied(true),
-                  );
+                  void navigator.clipboard
+                    .writeText(linkResult.url)
+                    .then(() => setLinkCopied(true));
                 }}
                 aria-label="Copy link"
               >

@@ -2,12 +2,6 @@
 
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { useConsoleUser } from "@/components/providers/console-user-provider";
-import { useTenantUserActions } from "@/hooks/use-tenant-user-actions";
-import { useTenantUserDialogState } from "@/hooks/use-tenant-user-dialog-state";
-import { useTenantUsers } from "@/hooks/use-tenant-users";
-import { TenantUserDialogs } from "@/components/users/tenant-user-dialogs";
-import { TenantUserListToolbar } from "@/components/users/tenant-user-list-toolbar";
-import { TenantUsersTable } from "@/components/users/tenant-users-table";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,13 +11,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { TenantUserDialogs } from "@/components/users/tenant-user-dialogs";
+import { TenantUserListToolbar } from "@/components/users/tenant-user-list-toolbar";
+import { TenantUsersTable } from "@/components/users/tenant-users-table";
+import { useTenantUserActions } from "@/hooks/use-tenant-user-actions";
+import { useTenantUserDialogState } from "@/hooks/use-tenant-user-dialog-state";
 import { useTenantUserPermissions } from "@/hooks/use-tenant-user-permissions";
+import { useTenantUsers } from "@/hooks/use-tenant-users";
 import type { SubTenantRole } from "@/lib/types";
 import { useState } from "react";
 
 /** Coordinates tenant user-management UI, data, dialog state, and actions. */
 export function TenantUsersPanel() {
-  const [resetTarget, setResetTarget] = useState<{ id: string; email: string; fullName: string | null } | null>(null);
+  const [resetTarget, setResetTarget] = useState<{
+    id: string;
+    email: string;
+    fullName: string | null;
+  } | null>(null);
   const viewer = useConsoleUser();
   const permissions = useTenantUserPermissions();
   const list = useTenantUsers({ canViewUsers: permissions.canViewUsers });
@@ -59,7 +63,10 @@ export function TenantUsersPanel() {
       />
 
       {initialLoading ? (
-        <div className="flex min-h-32 items-center justify-center" aria-busy="true">
+        <div
+          className="flex min-h-32 items-center justify-center"
+          aria-busy="true"
+        >
           <p className="text-sm text-muted-foreground">Loading users…</p>
         </div>
       ) : null}
@@ -78,7 +85,10 @@ export function TenantUsersPanel() {
       ) : null}
 
       {!initialLoading && !list.blockingError && list.users.length === 0 ? (
-        <EmptyState title="No users found" description={list.emptyDescription} />
+        <EmptyState
+          title="No users found"
+          description={list.emptyDescription}
+        />
       ) : null}
 
       {list.users.length > 0 ? (
@@ -87,7 +97,8 @@ export function TenantUsersPanel() {
           viewerId={viewer.id}
           actions={{
             canEditUsers: permissions.canEditUsers,
-            canEditOtherUsers: permissions.canEditUsers && viewer.role !== "EDITOR",
+            canEditOtherUsers:
+              permissions.canEditUsers && viewer.role !== "EDITOR",
             canChangeRoles: permissions.canChangeRoles,
             canActivateUsers: permissions.canActivateUsers,
             canSuspendUsers: permissions.canSuspendUsers,
@@ -181,24 +192,47 @@ export function TenantUsersPanel() {
         onRetryActivationLookup={actions.retryActivationLookup}
         onRequestActivationRegeneration={actions.requestActivationRegeneration}
       />
-      <Dialog open={Boolean(resetTarget)} onOpenChange={(open) => !open && setResetTarget(null)}>
+      <Dialog
+        open={Boolean(resetTarget)}
+        onOpenChange={(open) => !open && setResetTarget(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reset password?</DialogTitle>
             <DialogDescription>
-              View the current single-use reset link for {resetTarget?.fullName ?? resetTarget?.email}. A valid unused stored link is reused; an expired or used link is replaced and stored for two hours.
+              View the current single-use reset link for{" "}
+              {resetTarget?.fullName ?? resetTarget?.email}. A valid unused
+              stored link is reused; an expired or used link is replaced and
+              stored for two hours.
             </DialogDescription>
           </DialogHeader>
-          {dialogs.formError ? <p className="text-sm text-destructive" role="alert">{dialogs.formError}</p> : null}
+          {dialogs.formError ? (
+            <p className="text-sm text-destructive" role="alert">
+              {dialogs.formError}
+            </p>
+          ) : null}
           <DialogFooter>
-            <Button variant="outline" disabled={actions.resetting || actions.loadingResetLink} onClick={() => setResetTarget(null)}>Cancel</Button>
-            <Button disabled={actions.resetting || actions.loadingResetLink} onClick={() => {
-              if (!resetTarget) return;
-              void actions.showPasswordResetLink(resetTarget).then((created) => {
-                if (created) setResetTarget(null);
-              });
-            }}>
-              {actions.resetting || actions.loadingResetLink ? "Loading link…" : "Yes, reset password"}
+            <Button
+              variant="outline"
+              disabled={actions.resetting || actions.loadingResetLink}
+              onClick={() => setResetTarget(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={actions.resetting || actions.loadingResetLink}
+              onClick={() => {
+                if (!resetTarget) return;
+                void actions
+                  .showPasswordResetLink(resetTarget)
+                  .then((created) => {
+                    if (created) setResetTarget(null);
+                  });
+              }}
+            >
+              {actions.resetting || actions.loadingResetLink
+                ? "Loading link…"
+                : "Yes, reset password"}
             </Button>
           </DialogFooter>
         </DialogContent>
