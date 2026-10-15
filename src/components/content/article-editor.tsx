@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useArticleEditor, type SaveMode } from "@/hooks/use-article-editor";
 import type { ArticleTranslationDraft } from "@/types/article.types";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { ImageIcon, Loader2, Plus, Trash2, Upload } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -100,6 +101,70 @@ export function ArticleEditor({ id }: { id?: string }) {
       </div>
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="space-y-5 rounded-xl border bg-card p-5">
+          <section className="space-y-3 border-b pb-5">
+            <div>
+              <h2 className="text-sm font-medium">Thumbnail</h2>
+              <p className="text-xs text-muted-foreground">
+                Shown on the public website and article cards.
+              </p>
+            </div>
+            <div className="relative flex aspect-video max-h-80 items-center justify-center overflow-hidden rounded-lg border bg-muted/30">
+              {editor.thumbnailPreviewUrl || form.featuredImageUrl ? (
+                <Image
+                  src={editor.thumbnailPreviewUrl || form.featuredImageUrl}
+                  alt="Thumbnail preview"
+                  fill
+                  unoptimized
+                  sizes="(min-width: 1024px) 70vw, 100vw"
+                  className="object-cover"
+                />
+              ) : (
+                <div className="text-center text-sm text-muted-foreground">
+                  <ImageIcon className="mx-auto mb-2 size-6" />
+                  No thumbnail selected
+                </div>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                id="article-thumbnail-upload"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="sr-only"
+                disabled={editor.busy}
+                aria-label="Upload thumbnail image"
+                onChange={(event) => {
+                  editor.selectThumbnail(event.target.files?.[0]);
+                  event.target.value = "";
+                }}
+              />
+              <Button type="button" size="sm" asChild>
+                <label
+                  htmlFor="article-thumbnail-upload"
+                  className="cursor-pointer"
+                >
+                  <Upload />
+                  {editor.thumbnailFile || form.featuredImageUrl
+                    ? "Replace thumbnail"
+                    : "Upload thumbnail"}
+                </label>
+              </Button>
+              {editor.thumbnailFile || form.featuredImageUrl ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={editor.busy}
+                  onClick={editor.removeThumbnail}
+                >
+                  Remove
+                </Button>
+              ) : null}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              PNG, JPEG, or WebP · Maximum 1000 KB
+            </p>
+          </section>
           <label className={fieldClass}>
             Title *
             <Input
@@ -149,6 +214,7 @@ export function ArticleEditor({ id }: { id?: string }) {
                 value={form.content}
                 onChange={(value) => editor.patch("content", value)}
                 label="Article content"
+                onUploadImage={editor.uploadContentImage}
               />
             )}
           </section>
@@ -224,6 +290,7 @@ export function ArticleEditor({ id }: { id?: string }) {
                   onChange={(value) =>
                     editor.translationChanged(index, { content: value })
                   }
+                  onUploadImage={editor.uploadContentImage}
                 />
               </div>
             ))}
@@ -341,23 +408,6 @@ export function ArticleEditor({ id }: { id?: string }) {
                 </div>
               ) : null}
             </div>
-          </section>
-          <section className="space-y-3 rounded-xl border bg-card p-5">
-            <h2 className="text-sm font-medium">Media</h2>
-            <label className={fieldClass}>
-              Featured image URL
-              <Input
-                type="url"
-                placeholder="https://example.com/image.jpg"
-                value={form.featuredImageUrl}
-                onChange={(event) =>
-                  editor.patch("featuredImageUrl", event.target.value)
-                }
-              />
-            </label>
-            <p className="text-xs text-muted-foreground">
-              Use an HTTPS image URL. The Media library is not available yet.
-            </p>
           </section>
           {permissions.canSetBreakingArticles ||
           permissions.canSetFeaturedArticles ? (

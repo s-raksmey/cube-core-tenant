@@ -26,6 +26,7 @@ query ArticleForEdit($id: ID!) {
 }
 
 mutation CreateArticle($input: CreateArticleInput!) { createArticle(input: $input) { id } }
+mutation UploadArticleImage($articleId: ID, $input: ArticleImageUploadInput!) { uploadArticleImage(articleId: $articleId, input: $input) }
 mutation UpdateArticle($id: ID!, $input: UpdateArticleInput!) { updateArticle(id: $id, input: $input) { id } }
 mutation DeleteArticle($id: ID!) { deleteArticle(id: $id) }
 mutation DeleteArchivedArticle($id: ID!) { deleteArchivedArticle(id: $id) }

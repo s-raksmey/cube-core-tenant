@@ -87,6 +87,16 @@ export function ArticleDetail({ id }: { id: string }) {
   }
   return (
     <div className="space-y-5">
+      <Button
+        variant="ghost"
+        className="-ml-3 w-fit text-muted-foreground hover:text-foreground"
+        asChild
+      >
+        <Link href="/content/articles">
+          <ArrowLeft className="size-4" />
+          Back
+        </Link>
+      </Button>
       <PageHeader
         title={article.title}
         description={`${article.categoryName} · ${article.subcategoryName}`}
@@ -96,20 +106,6 @@ export function ArticleDetail({ id }: { id: string }) {
         className="overflow-hidden rounded-xl border bg-card shadow-xs"
       >
         <div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 sm:px-5">
-          <Button
-            variant="ghost"
-            className="-ml-2 text-muted-foreground hover:text-foreground"
-            asChild
-          >
-            <Link href="/content/articles">
-              <ArrowLeft />
-              Back to articles
-            </Link>
-          </Button>
-          <span
-            aria-hidden="true"
-            className="hidden h-5 w-px bg-border sm:block"
-          />
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary">
               {article.status.replaceAll("_", " ")}

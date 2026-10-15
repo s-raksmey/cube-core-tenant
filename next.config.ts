@@ -25,6 +25,10 @@ const nextConfig: NextConfig = {
         source: "/tenant-assets/:path*",
         destination: `${storageDestination}/storage/:path*`,
       },
+      {
+        source: "/storage/:path*",
+        destination: `${storageDestination}/storage/:path*`,
+      },
     ];
   },
 };

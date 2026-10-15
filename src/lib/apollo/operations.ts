@@ -21,6 +21,7 @@ export {
   ArticleDocument as ARTICLE_QUERY,
   ArticleForEditDocument as ARTICLE_FOR_EDIT_QUERY,
   CreateArticleDocument as CREATE_ARTICLE,
+  UploadArticleImageDocument as UPLOAD_ARTICLE_IMAGE,
   UpdateArticleDocument as UPDATE_ARTICLE,
   DeleteArticleDocument as DELETE_ARTICLE,
   DeleteArchivedArticleDocument as DELETE_ARCHIVED_ARTICLE,

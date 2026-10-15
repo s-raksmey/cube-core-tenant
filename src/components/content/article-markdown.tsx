@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useRef } from "react";
+import { useId, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
@@ -37,12 +37,17 @@ export function ArticleMarkdownEditor({
   value,
   onChange,
   label,
+  onUploadImage,
 }: {
   value: string;
   onChange: (value: string) => void;
   label: string;
+  onUploadImage?: (file: File) => Promise<string>;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
+  const uploadInputId = useId();
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   function insert(before: string, after = "", placeholder = "text") {
     const field = ref.current;
     if (!field) return;
@@ -59,6 +64,38 @@ export function ArticleMarkdownEditor({
         start + before.length + selected.length,
       );
     });
+  }
+  async function uploadSelectedImage(file?: File) {
+    if (!file || !onUploadImage || uploading) return;
+    setUploading(true);
+    setUploadError("");
+    try {
+      const url = await onUploadImage(file);
+      const field = ref.current;
+      if (!field) return;
+      const start = field.selectionStart;
+      const end = field.selectionEnd;
+      const description =
+        file.name
+          .replace(/\.[^.]+$/, "")
+          .replace(/[\[\]()]/g, " ")
+          .trim() || "Image";
+      const markdown = `![${description}](${url})`;
+      onChange(field.value.slice(0, start) + markdown + field.value.slice(end));
+      requestAnimationFrame(() => {
+        field.focus();
+        field.setSelectionRange(
+          start + markdown.length,
+          start + markdown.length,
+        );
+      });
+    } catch (reason) {
+      setUploadError(
+        reason instanceof Error ? reason.message : "Could not upload image.",
+      );
+    } finally {
+      setUploading(false);
+    }
   }
   return (
     <div className="space-y-2">
@@ -117,7 +154,33 @@ export function ArticleMarkdownEditor({
         >
           Image
         </Button>
+        {onUploadImage ? (
+          <>
+            <input
+              id={uploadInputId}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="sr-only"
+              disabled={uploading}
+              aria-label={`Upload image for ${label}`}
+              onChange={(event) => {
+                void uploadSelectedImage(event.target.files?.[0]);
+                event.target.value = "";
+              }}
+            />
+            <Button type="button" variant="outline" size="sm" asChild>
+              <label htmlFor={uploadInputId} className="cursor-pointer">
+                {uploading ? "Uploading…" : "Upload image"}
+              </label>
+            </Button>
+          </>
+        ) : null}
       </div>
+      {uploadError ? (
+        <p role="alert" className="text-xs text-destructive">
+          {uploadError}
+        </p>
+      ) : null}
       <textarea
         ref={ref}
         aria-label={label}

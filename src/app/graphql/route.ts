@@ -11,9 +11,8 @@ import { managementHostFromRequest } from "@/lib/tenant-hostname";
 import { print } from "graphql";
 import { NextResponse } from "next/server";
 
-// Branding images are capped at 1,000 KB by the API. GraphQL carries them as
-// Base64, which adds roughly one third to the request size.
-const MAX_GRAPHQL_BODY_BYTES = 1_500_000;
+// Leave room for a 1,000 KB base64 image and article text in one mutation.
+const MAX_GRAPHQL_BODY_BYTES = 2_500_000;
 
 async function resolveAccessToken(): Promise<{
   accessToken: string | null;
