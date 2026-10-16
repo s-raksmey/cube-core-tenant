@@ -11,7 +11,6 @@ const TENANT_BRANDING = gql`
       websiteLogoUrl
       faviconUrl
       publicWebsiteFaviconUrl
-      openGraphImageUrl
     }
   }
 `;

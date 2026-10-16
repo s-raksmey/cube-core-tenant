@@ -59,3 +59,16 @@ mutation DeleteCategory($id: ID!) {
   deleteCategory(id: $id)
 }
 
+mutation UpdateSubcategory($id: ID!, $input: UpdateSubcategoryInput!) {
+  updateSubcategory(id: $id, input: $input) {
+    id
+    categoryId
+    slug
+    translations { locale name }
+  }
+}
+
+mutation DeleteSubcategory($id: ID!) {
+  deleteSubcategory(id: $id)
+}
+

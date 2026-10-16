@@ -47,12 +47,13 @@ export const BRANDING_ASSETS: BrandingAssetConfig[] = [
     icon: ImageIcon,
     preview: "favicon",
   },
-  {
-    asset: "OPEN_GRAPH_IMAGE",
-    title: "Social sharing image",
-    description: "Shown when the public site is shared on social platforms.",
-    placement: "SEO & Social Sharing",
-    icon: Share2,
-    preview: "social",
-  },
 ];
+
+export const SEO_IMAGE_ASSET: BrandingAssetConfig = {
+  asset: "OPEN_GRAPH_IMAGE",
+  title: "Social sharing image",
+  description: "Shown when the public site is shared on social platforms.",
+  placement: "SEO & Social Sharing",
+  icon: Share2,
+  preview: "social",
+};

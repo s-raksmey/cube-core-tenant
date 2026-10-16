@@ -15,8 +15,10 @@ import { useTenantUserPermissions } from "@/hooks/use-tenant-user-permissions";
 import { supportedLocales } from "@/lib/locales";
 import {
   categoryToFormState,
+  subcategoryToFormState,
   type CategoryTarget,
   type TenantCategory,
+  type TenantSubcategory,
   type TranslationDraft,
 } from "@/types/category.types";
 import {
@@ -39,7 +41,7 @@ function formatSlug(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
-/** Tenant-scoped category list and translation-aware create workflow. */
+/** Tenant-scoped category and subcategory management. */
 export function CategoriesPanel() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<TenantCategory | null>(
@@ -52,7 +54,11 @@ export function CategoriesPanel() {
   ]);
   const [subcategoryTarget, setSubcategoryTarget] =
     useState<CategoryTarget | null>(null);
+  const [editingSubcategory, setEditingSubcategory] = useState<TenantSubcategory | null>(null);
+  const [subcategoryToDelete, setSubcategoryToDelete] = useState<CategoryTarget | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [subcategorySlug, setSubcategorySlug] = useState("");
+  const [isSubcategorySlugManuallyEdited, setIsSubcategorySlugManuallyEdited] = useState(false);
   const [subcategoryTranslations, setSubcategoryTranslations] = useState<
     TranslationDraft[]
   >([defaultTranslation()]);
@@ -71,11 +77,16 @@ export function CategoriesPanel() {
     createSubcategory,
     updateCategory,
     deleteCategory,
+    updateSubcategory,
+    deleteSubcategory,
     creatingCategory,
     creatingSubcategory,
     createCategoryError,
     createSubcategoryError,
     updatingCategory,
+    updatingSubcategory,
+    deletingSubcategory,
+    updateSubcategoryError,
   } = useTenantCategories();
   const {
     canCreateCategories,
@@ -83,9 +94,12 @@ export function CategoriesPanel() {
     canCreateSubcategories,
     canEditCategories,
     canDeleteCategories,
+    canEditSubcategories,
+    canDeleteSubcategories,
   } = useTenantUserPermissions();
   const showActions =
-    canCreateSubcategories || canEditCategories || canDeleteCategories;
+    canCreateSubcategories || canEditCategories || canDeleteCategories ||
+    (canViewSubcategories && (canEditSubcategories || canDeleteSubcategories));
   const availableLocales = useMemo(
     () =>
       supportedLocales
@@ -147,13 +161,26 @@ export function CategoriesPanel() {
 
   function openSubcategoryDialog(category: CategoryTarget) {
     setSubcategoryTarget(category);
+    setEditingSubcategory(null);
     setSubcategorySlug("");
+    setIsSubcategorySlugManuallyEdited(false);
     setSubcategoryTranslations([defaultTranslation()]);
+  }
+
+  function openEditSubcategoryDialog(category: CategoryTarget, subcategory: TenantSubcategory) {
+    const form = subcategoryToFormState(subcategory);
+    setSubcategoryTarget(category);
+    setEditingSubcategory(subcategory);
+    setSubcategorySlug(form.slug);
+    setIsSubcategorySlugManuallyEdited(true);
+    setSubcategoryTranslations(form.translations);
   }
 
   function closeSubcategoryDialog() {
     setSubcategoryTarget(null);
+    setEditingSubcategory(null);
     setSubcategorySlug("");
+    setIsSubcategorySlugManuallyEdited(false);
     setSubcategoryTranslations([defaultTranslation()]);
   }
 
@@ -173,20 +200,31 @@ export function CategoriesPanel() {
     if (!subcategoryTarget) return;
 
     try {
-      await createSubcategory({
-        categoryId: subcategoryTarget.id,
+      const input = {
         slug: subcategorySlug,
         translations: subcategoryTranslations.map((translation) => ({
           ...translation,
           name: translation.name.trim(),
         })),
-      });
+      };
+      if (editingSubcategory) await updateSubcategory(editingSubcategory.id, input);
+      else await createSubcategory({ categoryId: subcategoryTarget.id, ...input });
       setExpandedCategoryIds((current) =>
         new Set(current).add(subcategoryTarget.id),
       );
       closeSubcategoryDialog();
     } catch {
       // The operation error is presented in the dialog.
+    }
+  }
+  async function confirmDeleteSubcategory() {
+    if (!subcategoryToDelete) return;
+    try {
+      await deleteSubcategory(subcategoryToDelete.id);
+      setSubcategoryToDelete(null);
+      setDeleteError(null);
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : "Unable to delete subcategory.");
     }
   }
   async function submit() {
@@ -379,7 +417,42 @@ export function CategoriesPanel() {
                                   )
                                   .join(" · ")}
                               </td>
-                              {showActions ? <td /> : null}
+                              {showActions ? (
+                                <td className="p-3 text-right">
+                                  <div className="flex justify-end gap-1">
+                                    {canEditSubcategories ? (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        title="Edit subcategory"
+                                        aria-label={`Edit ${subcategory.translations.find((item) => item.locale === "en")?.name ?? subcategory.slug}`}
+                                        onClick={() => openEditSubcategoryDialog(
+                                          { id: category.id, name: categoryName }, subcategory,
+                                        )}
+                                      >
+                                        <Pencil />
+                                      </Button>
+                                    ) : null}
+                                    {canDeleteSubcategories ? (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        title="Delete subcategory"
+                                        aria-label={`Delete ${subcategory.translations.find((item) => item.locale === "en")?.name ?? subcategory.slug}`}
+                                        onClick={() => {
+                                          setDeleteError(null);
+                                          setSubcategoryToDelete({
+                                            id: subcategory.id,
+                                            name: subcategory.translations.find((item) => item.locale === "en")?.name ?? subcategory.slug,
+                                          });
+                                        }}
+                                      >
+                                        <Trash2 className="text-destructive" />
+                                      </Button>
+                                    ) : null}
+                                  </div>
+                                </td>
+                              ) : null}
                             </tr>
                           ))
                         ) : (
@@ -598,9 +671,9 @@ export function CategoriesPanel() {
       >
         <DialogContent className="gap-5 p-0 sm:max-w-md">
           <DialogHeader className="gap-1 px-5 pt-5">
-            <DialogTitle>Create subcategory</DialogTitle>
+            <DialogTitle>{editingSubcategory ? "Edit subcategory" : "Create subcategory"}</DialogTitle>
             <DialogDescription>
-              Create a subcategory under{" "}
+              {editingSubcategory ? "Update the subcategory under " : "Create a subcategory under "}
               <span className="font-medium text-foreground">
                 {subcategoryTarget?.name}
               </span>
@@ -621,7 +694,7 @@ export function CategoriesPanel() {
                 onChange={(event) => {
                   const name = event.target.value;
                   updateSubcategoryTranslation(0, { name });
-                  setSubcategorySlug(formatSlug(name));
+                  if (!isSubcategorySlugManuallyEdited) setSubcategorySlug(formatSlug(name));
                 }}
                 placeholder="Enter subcategory name"
                 autoFocus
@@ -731,9 +804,10 @@ export function CategoriesPanel() {
               </span>
               <Input
                 value={subcategorySlug}
-                onChange={(event) =>
-                  setSubcategorySlug(formatSlug(event.target.value))
-                }
+                onChange={(event) => {
+                  setIsSubcategorySlugManuallyEdited(true);
+                  setSubcategorySlug(formatSlug(event.target.value));
+                }}
                 placeholder="Created from the English name"
                 autoComplete="off"
               />
@@ -742,10 +816,13 @@ export function CategoriesPanel() {
               </span>
             </label>
 
-            {createSubcategoryError ? (
+            {!editingSubcategory && createSubcategoryError ? (
               <p className="text-sm text-destructive">
                 {createSubcategoryError.message}
               </p>
+            ) : null}
+            {editingSubcategory && updateSubcategoryError ? (
+              <p className="text-sm text-destructive">{updateSubcategoryError.message}</p>
             ) : null}
           </div>
 
@@ -755,13 +832,33 @@ export function CategoriesPanel() {
             </Button>
             <Button
               disabled={
-                creatingSubcategory ||
+                creatingSubcategory || updatingSubcategory ||
                 hasIncompleteSubcategoryTranslation ||
                 !subcategorySlug
               }
               onClick={() => void submitSubcategory()}
             >
-              {creatingSubcategory ? "Creating…" : "Create subcategory"}
+              {creatingSubcategory || updatingSubcategory ? "Saving…" : editingSubcategory ? "Save changes" : "Create subcategory"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(subcategoryToDelete)} onOpenChange={(open) => {
+        if (!open) { setSubcategoryToDelete(null); setDeleteError(null); }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete subcategory?</DialogTitle>
+            <DialogDescription>
+              Delete {subcategoryToDelete?.name}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {deleteError ? <p role="alert" className="text-sm text-destructive">{deleteError}</p> : null}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setSubcategoryToDelete(null); setDeleteError(null); }}>Cancel</Button>
+            <Button variant="destructive" disabled={deletingSubcategory} onClick={() => void confirmDeleteSubcategory()}>
+              {deletingSubcategory ? "Deleting…" : "Delete subcategory"}
             </Button>
           </DialogFooter>
         </DialogContent>

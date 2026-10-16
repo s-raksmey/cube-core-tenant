@@ -35,8 +35,8 @@ async function fileToBase64(file: File) {
 export function TenantBrandingPanel() {
   const {
     loading: permissionsLoading,
-    canViewBranding: canView,
-    canUpdateBranding: canEdit,
+    canViewSettings: canView,
+    canUpdateSettings: canEdit,
   } = useTenantUserPermissions();
   const {
     data,

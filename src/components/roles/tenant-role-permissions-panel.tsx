@@ -42,6 +42,7 @@ export function TenantRolePermissionsPanel() {
       />
       <TenantPermissionSummaryCard
         title="Sub-tenant Settings"
+        description="Site settings cover General, Website maintenance and branding, Social Links, SEO, and Content (Breaking duration). Managed in the Main Console."
         rows={TENANT_SETTINGS_PERMISSION_ROWS}
         permissionsByRole={permissionsByRole}
       />

@@ -84,7 +84,7 @@ export function AppSidebar({ user }: { user: AuthUser }) {
   );
   const {
     canViewUsers,
-    canViewBranding,
+    canViewSettings,
     canViewCategories,
     canViewTags,
     canViewArticles,
@@ -93,7 +93,7 @@ export function AppSidebar({ user }: { user: AuthUser }) {
   const items = (user.role === "EDITOR" ? editorNav : adminNav).filter(
     (item) =>
       (item.href !== "/users" || canViewUsers) &&
-      (item.href !== "/settings" || canViewBranding),
+      (item.href !== "/settings" || canViewSettings),
   );
 
   return (

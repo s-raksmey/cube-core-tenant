@@ -4,13 +4,16 @@ import type {
   CreateCategoryInput,
   CreateSubcategoryInput,
   UpdateCategoryInput,
+  UpdateSubcategoryInput,
 } from "@/lib/apollo/generated/graphql";
 import {
   CATEGORIES_QUERY,
   CREATE_CATEGORY,
   CREATE_SUBCATEGORY,
   DELETE_CATEGORY,
+  DELETE_SUBCATEGORY,
   UPDATE_CATEGORY,
+  UPDATE_SUBCATEGORY,
 } from "@/lib/apollo/operations";
 import type { TenantCategory } from "@/types/category.types";
 import { useMutation, useQuery } from "@apollo/client/react";
@@ -28,6 +31,8 @@ export function useTenantCategories() {
     useMutation(CREATE_SUBCATEGORY);
   const [runUpdateCategory, updateCategoryState] = useMutation(UPDATE_CATEGORY);
   const [runDeleteCategory, deleteCategoryState] = useMutation(DELETE_CATEGORY);
+  const [runUpdateSubcategory, updateSubcategoryState] = useMutation(UPDATE_SUBCATEGORY);
+  const [runDeleteSubcategory, deleteSubcategoryState] = useMutation(DELETE_SUBCATEGORY);
 
   const categories = useMemo(
     () => (query.data?.categories ?? []) as TenantCategory[],
@@ -75,6 +80,22 @@ export function useTenantCategories() {
     [refresh, runDeleteCategory],
   );
 
+  const updateSubcategory = useCallback(
+    async (id: string, input: UpdateSubcategoryInput) => {
+      await runUpdateSubcategory({ variables: { id, input } });
+      await refresh();
+    },
+    [refresh, runUpdateSubcategory],
+  );
+
+  const deleteSubcategory = useCallback(
+    async (id: string) => {
+      await runDeleteSubcategory({ variables: { id } });
+      await refresh();
+    },
+    [refresh, runDeleteSubcategory],
+  );
+
   return {
     searchInput,
     setSearchInput,
@@ -86,11 +107,17 @@ export function useTenantCategories() {
     createSubcategory,
     updateCategory,
     deleteCategory,
+    updateSubcategory,
+    deleteSubcategory,
     creatingCategory: createCategoryState.loading,
     creatingSubcategory: createSubcategoryState.loading,
     updatingCategory: updateCategoryState.loading,
     deletingCategory: deleteCategoryState.loading,
+    updatingSubcategory: updateSubcategoryState.loading,
+    deletingSubcategory: deleteSubcategoryState.loading,
     createCategoryError: createCategoryState.error,
     createSubcategoryError: createSubcategoryState.error,
+    updateSubcategoryError: updateSubcategoryState.error,
+    deleteSubcategoryError: deleteSubcategoryState.error,
   };
 }

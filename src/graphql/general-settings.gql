@@ -1,0 +1,93 @@
+query MyGeneralSettings {
+  myGeneralSettings {
+    siteName
+    siteDescription
+    contactEmail
+    phone
+    secondaryPhone
+    address
+  }
+}
+
+mutation UpdateMyGeneralSettings($input: UpdateGeneralSettingsInput!) {
+  updateMyGeneralSettings(input: $input) {
+    siteName
+    siteDescription
+    contactEmail
+    phone
+    secondaryPhone
+    address
+  }
+}
+
+query MyWebsiteSettings {
+  myWebsiteSettings {
+    maintenanceMode
+    maintenanceMessage
+  }
+}
+
+mutation UpdateMyWebsiteSettings($input: UpdateWebsiteSettingsInput!) {
+  updateMyWebsiteSettings(input: $input) {
+    maintenanceMode
+    maintenanceMessage
+  }
+}
+
+query MySocialLinks {
+  mySocialLinks {
+    platform
+    url
+    enabled
+    sortOrder
+  }
+}
+
+mutation UpdateMySocialLinks($input: [SaveSocialLinkInput!]!) {
+  updateMySocialLinks(input: $input) {
+    platform
+    url
+    enabled
+    sortOrder
+  }
+}
+
+query MySeoSettings {
+  mySeoSettings {
+    allowIndexing
+    metaTitle
+    metaDescription
+    ogTitle
+    ogDescription
+    defaultOgImageUrl
+  }
+}
+
+mutation UpdateMySeoSettings($input: UpdateSeoSettingsInput!) {
+  updateMySeoSettings(input: $input) {
+    allowIndexing
+    metaTitle
+    metaDescription
+    ogTitle
+    ogDescription
+    defaultOgImageUrl
+  }
+}
+
+mutation UpdateMySeoImage($input: SeoImageInput!) {
+  updateMySeoImage(input: $input)
+}
+
+query MyContentSettings {
+  myContentSettings {
+    breakingDurationValue
+    breakingDurationUnit
+  }
+}
+
+mutation UpdateMyContentSettings($input: UpdateContentSettingsInput!) {
+  updateMyContentSettings(input: $input) {
+    breakingDurationValue
+    breakingDurationUnit
+  }
+}

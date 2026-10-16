@@ -10,8 +10,8 @@ export const TENANT_USER_PERMISSION_ROWS = [
 ] as const;
 
 export const TENANT_SETTINGS_PERMISSION_ROWS = [
-  ["BRANDING_VIEW", "View settings"],
-  ["BRANDING_UPDATE", "Edit settings"],
+  ["SETTINGS_VIEW", "View site settings"],
+  ["SETTINGS_UPDATE", "Edit site settings"],
 ] as const;
 
 export const TENANT_ANALYTICS_PERMISSION_ROWS = [

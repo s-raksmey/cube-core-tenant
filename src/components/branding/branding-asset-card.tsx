@@ -63,6 +63,9 @@ type BrandingAssetCardProps = {
   onSelect: (asset: BrandingAsset, file?: File) => void;
   onRemove: (asset: BrandingAsset) => void;
   onSave: (asset: BrandingAsset) => void;
+  showSaveButton?: boolean;
+  accept?: string;
+  fileHint?: string;
 };
 
 export function BrandingAssetCard({
@@ -75,6 +78,9 @@ export function BrandingAssetCard({
   onSelect,
   onRemove,
   onSave,
+  showSaveButton = true,
+  accept = "image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon,image/vnd.microsoft.icon",
+  fileHint = "PNG, JPEG, WebP, SVG, or ICO · Maximum 1,000 KB",
 }: BrandingAssetCardProps) {
   const inputId = useId();
   const Icon = config.icon;
@@ -108,7 +114,7 @@ export function BrandingAssetCard({
               id={inputId}
               type="file"
               className="sr-only"
-              accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon,image/vnd.microsoft.icon"
+              accept={accept}
               disabled={saving}
               onChange={(event) => {
                 onSelect(config.asset, event.target.files?.[0]);
@@ -125,7 +131,7 @@ export function BrandingAssetCard({
                     : "Upload image"}
               </label>
             </Button>
-            <Button
+            {showSaveButton ? <Button
               type="button"
               size="sm"
               variant="outline"
@@ -133,7 +139,7 @@ export function BrandingAssetCard({
               onClick={() => onSave(config.asset)}
             >
               Save
-            </Button>
+            </Button> : null}
             <Button
               type="button"
               size="sm"
@@ -149,7 +155,7 @@ export function BrandingAssetCard({
           <p className="text-sm text-muted-foreground">View only</p>
         )}
         <p className="text-xs text-muted-foreground">
-          PNG, JPEG, WebP, SVG, or ICO · Maximum 1,000 KB
+          {fileHint}
         </p>
         {selectedFile ? (
           <p className="text-xs text-primary">

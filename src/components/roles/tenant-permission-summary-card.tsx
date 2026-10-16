@@ -43,10 +43,12 @@ function ReadOnlySwitch({
 
 export function TenantPermissionSummaryCard({
   title,
+  description = "These permissions are managed in the Main Console.",
   rows,
   permissionsByRole,
 }: {
   title: string;
+  description?: string;
   rows: readonly (readonly [string, string])[];
   permissionsByRole: Map<string, Set<string>>;
 }) {
@@ -54,9 +56,7 @@ export function TenantPermissionSummaryCard({
     <Card className="max-w-5xl overflow-hidden py-0">
       <CardHeader className="gap-1 border-b px-5 py-4">
         <CardTitle className="text-base">{title}</CardTitle>
-        <CardDescription>
-          These permissions are managed in the Main Console.
-        </CardDescription>
+        <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent className="p-0">
         <div className="grid grid-cols-[minmax(220px,1fr)_120px_120px] items-center border-b bg-muted/25 px-6 py-3">
