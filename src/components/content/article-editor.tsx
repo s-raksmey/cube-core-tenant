@@ -9,7 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useArticleEditor, type SaveMode } from "@/hooks/use-article-editor";
 import type { ArticleTranslationDraft } from "@/types/article.types";
-import { ImageIcon, Loader2, Plus, Trash2, Upload } from "lucide-react";
+import {
+  ArrowLeft,
+  ImageIcon,
+  Loader2,
+  Plus,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -82,16 +89,21 @@ export function ArticleEditor({ id }: { id?: string }) {
   }
   return (
     <div className="space-y-5">
+      <Button
+        variant="ghost"
+        className="-ml-3 w-fit text-muted-foreground hover:text-foreground"
+        asChild
+      >
+        <Link href={id ? `/content/articles/${id}` : "/content/articles"}>
+          <ArrowLeft className="size-4" />
+          Back
+        </Link>
+      </Button>
       <PageHeader
         title={id ? "Edit article" : "Create article"}
         description="Write and organize content for your workspace."
       />
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" asChild>
-          <Link href={id ? `/content/articles/${id}` : "/content/articles"}>
-            Back
-          </Link>
-        </Button>
         <Button
           variant={preview ? "default" : "outline"}
           onClick={() => setPreview(!preview)}

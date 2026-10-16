@@ -16,6 +16,7 @@ import type {
 import {
   Activity,
   CalendarDays,
+  ChevronDown,
   FileText,
   ScanEye,
   Send,
@@ -497,21 +498,24 @@ export function TenantAnalyticsPage() {
         }
       />
       <div className="flex flex-wrap items-end gap-3">
-        <label className="space-y-1 text-sm font-medium">
+        <label className="flex flex-col gap-2 text-sm font-medium">
           Period
-          <select
-            className="block h-9 rounded-md border border-input bg-background px-3 text-sm"
-            value={period}
-            onChange={(event) =>
-              setPeriod(event.target.value as AnalyticsPeriod)
-            }
-          >
-            {periods.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              className="h-9 appearance-none rounded-md border border-input bg-background px-3 pr-6 text-sm"
+              value={period}
+              onChange={(event) =>
+                setPeriod(event.target.value as AnalyticsPeriod)
+              }
+            >
+              {periods.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-3 size-3.5" />
+          </div>
         </label>
         {period === "CUSTOM" ? (
           <>

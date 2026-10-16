@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import { useId, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
@@ -18,13 +19,19 @@ export function ArticleMarkdown({ content }: { content: string }) {
               {children}
             </a>
           ),
-          img: ({ alt, src }) => (
-            <img
-              src={src}
-              alt={alt ?? ""}
-              className="max-h-96 max-w-full rounded-lg object-contain"
-            />
-          ),
+          img: ({ alt, src }) => {
+            if (typeof src !== "string") return null;
+
+            return (
+              <Image
+                src={src}
+                alt={alt ?? ""}
+                width={1200}
+                height={600}
+                className="max-h-96 max-w-full rounded-lg object-contain"
+              />
+            );
+          },
         }}
       >
         {content}

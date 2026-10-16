@@ -27,7 +27,8 @@ import type {
   ArticleStatus,
 } from "@/lib/apollo/generated/graphql";
 import { articleActions } from "@/lib/article-workflow";
-import { Loader2, MoreHorizontal, Plus } from "lucide-react";
+import { ChevronDown, Loader2, MoreHorizontal, Plus } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -44,7 +45,7 @@ const statusLabel = (status: ArticleStatus) =>
     .toLowerCase()
     .replace(/^./, (letter) => letter.toUpperCase());
 const selectClass =
-  "h-9 rounded-md border border-input bg-background px-2 text-sm";
+  "h-9 appearance-none rounded-md border border-input bg-background px-3 pr-8 text-sm";
 const actionLabels: Record<ArticleListAction, string> = {
   delete: "Delete draft",
   deleteArchived: "Delete permanently",
@@ -121,34 +122,42 @@ export function ArticlesList({ initialScope }: { initialScope: ArticleScope }) {
             Search
           </Button>
         </div>
-        <select
-          className={selectClass}
-          aria-label="Filter status"
-          value={data.status}
-          onChange={(event) =>
-            data.setStatus(event.target.value as ArticleStatus | "")
-          }
-        >
-          <option value="">All statuses</option>
-          {statuses.map((status) => (
-            <option key={status} value={status}>
-              {statusLabel(status)}
-            </option>
-          ))}
-        </select>
-        <select
-          className={selectClass}
-          aria-label="Filter category"
-          value={data.categoryId}
-          onChange={(event) => data.setCategoryId(event.target.value)}
-        >
-          <option value="">All categories</option>
-          {data.categories.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
+        <div className="relative">
+          <select
+            className={selectClass}
+            aria-label="Filter status"
+            value={data.status}
+            onChange={(event) =>
+              data.setStatus(event.target.value as ArticleStatus | "")
+            }
+          >
+            <option value="">All statuses</option>
+            {statuses.map((status) => (
+              <option key={status} value={status}>
+                {statusLabel(status)}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2" />
+        </div>
+
+        <div className="relative">
+          <select
+            className={selectClass}
+            aria-label="Filter category"
+            value={data.categoryId}
+            onChange={(event) => data.setCategoryId(event.target.value)}
+          >
+            <option value="">All categories</option>
+            {data.categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2" />
+        </div>
+
         {data.permissions.canCreateArticles ? (
           <Button className="sm:ml-auto" asChild>
             <Link href="/content/articles/new">
@@ -266,9 +275,11 @@ export function ArticlesList({ initialScope }: { initialScope: ArticleScope }) {
                         href={`/content/articles/${article.id}`}
                       >
                         {article.featuredImageUrl ? (
-                          <img
+                          <Image
                             src={article.featuredImageUrl}
                             alt=""
+                            width={40}
+                            height={40}
                             className="size-10 rounded object-cover"
                           />
                         ) : null}

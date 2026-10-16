@@ -34,6 +34,7 @@ import {
   Pencil,
   ScanEye,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -311,9 +312,11 @@ export function ArticleDetail({ id }: { id: string }) {
             ))}
           </div>
           {article.featuredImageUrl ? (
-            <img
+            <Image
               src={article.featuredImageUrl}
               alt=""
+              width={1200}
+              height={600}
               className="max-h-96 w-full rounded-lg object-cover"
             />
           ) : null}
