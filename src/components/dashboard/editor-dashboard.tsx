@@ -1,20 +1,22 @@
 "use client";
 
-import { ActivityFeed } from "@/components/dashboard/activity-feed";
-import { ChartPanel } from "@/components/dashboard/chart-panel";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { TenantDashboardCharts } from "@/components/dashboard/tenant-dashboard-charts";
 import { TenantLandingHero } from "@/components/dashboard/tenant-landing-hero";
 import { Button } from "@/components/ui/button";
 import { useTenantDashboardData } from "@/hooks/use-tenant-dashboard-data";
-import { formatBytes } from "@/lib/format-bytes";
+import { useTenantUserPermissions } from "@/hooks/use-tenant-user-permissions";
 import type { AuthUser } from "@/lib/types";
-import { FileText, HardDrive } from "lucide-react";
+import { FileText, ScanEye, Share2 } from "lucide-react";
 import Link from "next/link";
 
 export function EditorDashboard({ user }: { user: AuthUser }) {
   const { data, error, refetch, initialLoading } = useTenantDashboardData();
+  const { canViewTenantAnalytics, canViewOwnAnalytics } =
+    useTenantUserPermissions();
+  const canViewAnalytics = canViewTenantAnalytics || canViewOwnAnalytics;
   const dashboard = data?.tenantDashboard;
   return (
     <div className="space-y-6">
@@ -54,46 +56,49 @@ export function EditorDashboard({ user }: { user: AuthUser }) {
         </div>
       </section>
       <div className="grid gap-4 sm:grid-cols-2">
-        <KpiCard
-          title="Published Content"
-          value={dashboard?.publishedContent ?? 0}
-          hint="Content module not implemented yet"
-          icon={FileText}
-          loading={initialLoading}
-        />
-        <KpiCard
-          title="Media Storage"
-          value={formatBytes(dashboard?.mediaStorageBytes ?? 0)}
-          hint="Media module not implemented yet"
-          icon={HardDrive}
-          loading={initialLoading}
-        />
+        {canViewAnalytics ? (
+          <KpiCard
+            title="Published Content"
+            value={dashboard?.publishedContent ?? 0}
+            hint="Currently published articles"
+            icon={FileText}
+            loading={initialLoading}
+          />
+        ) : null}
+        {canViewAnalytics ? (
+          <KpiCard
+            title="Article views · 6 months"
+            value={
+              dashboard?.viewsByMonth.reduce(
+                (sum, item) => sum + item.count,
+                0,
+              ) ?? 0
+            }
+            icon={ScanEye}
+            loading={initialLoading}
+          />
+        ) : null}
+        {canViewAnalytics ? (
+          <KpiCard
+            title="Share actions · 6 months"
+            value={
+              dashboard?.sharesByMonth.reduce(
+                (sum, item) => sum + item.count,
+                0,
+              ) ?? 0
+            }
+            icon={Share2}
+            loading={initialLoading}
+          />
+        ) : null}
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ChartPanel
-          title="Content activity over time"
+      {canViewAnalytics ? (
+        <TenantDashboardCharts
+          dashboard={dashboard}
           loading={initialLoading}
-          emptyLabel="No content activity yet."
-          points={(dashboard?.contentActivityByMonth ?? []).map((item) => ({
-            label: item.month.slice(5),
-            value: item.count,
-          }))}
+          own={!canViewTenantAnalytics}
         />
-        <ChartPanel
-          title="Content by status"
-          loading={initialLoading}
-          emptyLabel="No content distribution yet."
-          points={(dashboard?.contentByStatus ?? []).map((item) => ({
-            label: item.status,
-            value: item.count,
-          }))}
-        />
-      </div>
-      <ActivityFeed
-        title="Recent workspace activity"
-        loading={initialLoading}
-        items={dashboard?.recentActivity ?? []}
-      />
+      ) : null}
     </div>
   );
 }

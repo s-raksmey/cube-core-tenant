@@ -16,6 +16,8 @@ export function useTenantUserPermissions() {
     canSuspendUsers: permissions.has("USERS_SUSPEND"),
     canDeleteUsers: permissions.has("USERS_DELETE"),
     canViewBranding: permissions.has("BRANDING_VIEW"),
+    canViewTenantAnalytics: permissions.has("ANALYTICS_VIEW_TENANT"),
+    canViewOwnAnalytics: permissions.has("ANALYTICS_VIEW_OWN"),
     canViewTags: permissions.has("TAG_VIEW"),
     canCreateTags: permissions.has("TAG_CREATE"),
     canEditTags: permissions.has("TAG_EDIT"),

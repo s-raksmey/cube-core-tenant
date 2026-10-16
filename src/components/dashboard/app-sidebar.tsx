@@ -21,6 +21,7 @@ import { useTenantUserPermissions } from "@/hooks/use-tenant-user-permissions";
 import type { AuthUser } from "@/lib/types";
 import {
   Activity,
+  ChartNoAxesCombined,
   ChevronDown,
   FileText,
   ImageIcon,
@@ -46,6 +47,7 @@ type NavItem = {
 
 const adminNav: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { title: "Analytics", href: "/analytics", icon: ChartNoAxesCombined },
   { title: "Users", href: "/users", icon: Users },
   { title: "Roles & Permissions", href: "/roles", icon: ShieldCheck },
   { title: "Media", href: "/media", icon: ImageIcon },
@@ -55,6 +57,7 @@ const adminNav: NavItem[] = [
 
 const editorNav: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { title: "Analytics", href: "/analytics", icon: ChartNoAxesCombined },
   { title: "Users", href: "/users", icon: Users },
   { title: "Roles & Permissions", href: "/roles", icon: ShieldCheck },
   { title: "Media", href: "/media", icon: ImageIcon },

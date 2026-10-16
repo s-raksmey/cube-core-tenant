@@ -14,6 +14,11 @@ export const TENANT_SETTINGS_PERMISSION_ROWS = [
   ["BRANDING_UPDATE", "Edit settings"],
 ] as const;
 
+export const TENANT_ANALYTICS_PERMISSION_ROWS = [
+  ["ANALYTICS_VIEW_TENANT", "View tenant analytics"],
+  ["ANALYTICS_VIEW_OWN", "View own analytics"],
+] as const;
+
 export const TENANT_CATEGORY_PERMISSION_ROWS = [
   ["CATEGORY_VIEW", "View category"],
   ["CATEGORY_VIEW_SUBCATEGORY", "View sub category"],

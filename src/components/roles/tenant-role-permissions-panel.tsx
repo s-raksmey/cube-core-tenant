@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { TenantPermissionSummaryCard } from "@/components/roles/tenant-permission-summary-card";
 import { useTenantRolePermissionSummary } from "@/hooks/use-tenant-role-permission-summary";
 import {
+  TENANT_ANALYTICS_PERMISSION_ROWS,
   TENANT_ARTICLE_PERMISSION_ROWS,
   TENANT_CATEGORY_PERMISSION_ROWS,
   TENANT_SETTINGS_PERMISSION_ROWS,
@@ -52,6 +53,11 @@ export function TenantRolePermissionsPanel() {
       <TenantPermissionSummaryCard
         title="Articles"
         rows={TENANT_ARTICLE_PERMISSION_ROWS}
+        permissionsByRole={permissionsByRole}
+      />
+      <TenantPermissionSummaryCard
+        title="Analytics"
+        rows={TENANT_ANALYTICS_PERMISSION_ROWS}
         permissionsByRole={permissionsByRole}
       />
     </div>

@@ -27,7 +27,13 @@ import {
 } from "@/hooks/use-article-detail";
 import { articleActions } from "@/lib/article-workflow";
 import { supportedLocales } from "@/lib/locales";
-import { ArrowLeft, Eye, Loader2, MoreHorizontal, Pencil } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  MoreHorizontal,
+  Pencil,
+  ScanEye,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -121,7 +127,7 @@ export function ArticleDetail({ id }: { id: string }) {
         <div className="flex flex-col gap-3 border-t bg-muted/20 px-4 py-3 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
           <Button variant="outline" className="self-start" asChild>
             <a href="#article-preview">
-              <Eye />
+              <ScanEye />
               Preview
             </a>
           </Button>

@@ -1,0 +1,23 @@
+query TenantAnalytics($range: AnalyticsRangeInput) {
+  tenantAnalytics(range: $range) {
+    scope start end grouping totalArticles
+    statusCounts { name count }
+    views { value previousValue percentChange }
+    shares { value previousValue percentChange }
+    published { value previousValue percentChange }
+    viewsOverTime { date value }
+    sharesOverTime { date value }
+    publishingOverTime { date value }
+    mostViewed { id name views shares }
+    mostShared { id name views shares }
+    recentArticles { id name status }
+    categories { id name views shares }
+    subcategories { id name views shares }
+    tags { id name views shares }
+    breaking { published views shares }
+    featured { published views shares }
+    sharePlatforms { name count }
+    reviews { submitted changesRequested approved averageReviewHours waiting }
+    authorActivity { id name created submitted published }
+  }
+}

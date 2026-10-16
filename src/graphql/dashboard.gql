@@ -9,7 +9,6 @@ query TenantDashboard {
     totalUsers
     activeUsers
     publishedContent
-    mediaStorageBytes
     contentActivityByMonth {
       month
       count
@@ -18,21 +17,8 @@ query TenantDashboard {
       status
       count
     }
-    recentUsers {
-      id
-      email
-      username
-      fullName
-      role
-      status
-      createdAt
-    }
-    recentActivity {
-      id
-      action
-      createdAt
-      actorEmail
-    }
+    viewsByMonth { month count }
+    sharesByMonth { month count }
   }
 }
 
