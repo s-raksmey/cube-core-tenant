@@ -20,6 +20,7 @@ export type ArticleFormState = {
   tagIds: string[];
   translations: ArticleTranslationDraft[];
   featuredImageUrl: string;
+  heroImageUrl: string;
   isBreaking: boolean;
   isFeatured: boolean;
 };
@@ -34,6 +35,7 @@ export const emptyArticleForm = (): ArticleFormState => ({
   tagIds: [],
   translations: [],
   featuredImageUrl: "",
+  heroImageUrl: "",
   isBreaking: false,
   isFeatured: false,
 });
@@ -52,6 +54,7 @@ export function articleToForm(article: ArticleEditData): ArticleFormState {
       summary: item.summary ?? "",
     })),
     featuredImageUrl: article.featuredImageUrl ?? "",
+    heroImageUrl: article.heroImageUrl ?? "",
     isBreaking: article.isBreaking,
     isFeatured: article.isFeatured,
   };
@@ -79,6 +82,7 @@ export function articleFormInput(
       content: item.content,
     })),
     featuredImageUrl: form.featuredImageUrl.trim() || null,
+    heroImageUrl: form.heroImageUrl.trim() || null,
     ...(permissions.canSetBreakingArticles
       ? { isBreaking: form.isBreaking }
       : {}),

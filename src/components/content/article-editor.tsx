@@ -115,7 +115,7 @@ export function ArticleEditor({ id }: { id?: string }) {
         <div className="space-y-5 rounded-xl border bg-card p-5">
           <section className="space-y-3 border-b pb-5">
             <div>
-              <h2 className="text-sm font-medium">Thumbnail</h2>
+              <h2 className="text-sm font-medium">Featured Image</h2>
               <p className="text-xs text-muted-foreground">
                 Shown on the public website and article cards.
               </p>
@@ -124,7 +124,7 @@ export function ArticleEditor({ id }: { id?: string }) {
               {editor.thumbnailPreviewUrl || form.featuredImageUrl ? (
                 <Image
                   src={editor.thumbnailPreviewUrl || form.featuredImageUrl}
-                  alt="Thumbnail preview"
+                  alt="Featured image preview"
                   fill
                   unoptimized
                   sizes="(min-width: 1024px) 70vw, 100vw"
@@ -133,7 +133,7 @@ export function ArticleEditor({ id }: { id?: string }) {
               ) : (
                 <div className="text-center text-sm text-muted-foreground">
                   <ImageIcon className="mx-auto mb-2 size-6" />
-                  No thumbnail selected
+                  No featured image selected
                 </div>
               )}
             </div>
@@ -144,7 +144,7 @@ export function ArticleEditor({ id }: { id?: string }) {
                 accept="image/png,image/jpeg,image/webp"
                 className="sr-only"
                 disabled={editor.busy}
-                aria-label="Upload thumbnail image"
+                aria-label="Upload featured image"
                 onChange={(event) => {
                   editor.selectThumbnail(event.target.files?.[0]);
                   event.target.value = "";
@@ -157,8 +157,8 @@ export function ArticleEditor({ id }: { id?: string }) {
                 >
                   <Upload />
                   {editor.thumbnailFile || form.featuredImageUrl
-                    ? "Replace thumbnail"
-                    : "Upload thumbnail"}
+                    ? "Replace featured image"
+                    : "Upload featured image"}
                 </label>
               </Button>
               {editor.thumbnailFile || form.featuredImageUrl ? (
@@ -174,9 +174,75 @@ export function ArticleEditor({ id }: { id?: string }) {
               ) : null}
             </div>
             <p className="text-xs text-muted-foreground">
-              PNG, JPEG, or WebP · Maximum 1000 KB
+              PNG, JPEG, or WebP · Maximum 3000 KB
             </p>
           </section>
+          <details
+            className="border-b pb-5"
+            open={Boolean(editor.heroFile || form.heroImageUrl) || undefined}
+          >
+            <summary className="cursor-pointer text-sm font-medium">
+              Featured News Hero Image (optional)
+            </summary>
+            <div className="mt-3 space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Optional wide image used when this article appears in the
+                Featured News banner. If empty, the Featured Image will be used.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Recommended: 1920 × 640 (3:1) · PNG, JPEG, or WebP · Maximum
+                3000 KB
+              </p>
+              {editor.heroPreviewUrl || form.heroImageUrl ? (
+                <div className="relative aspect-3/1 overflow-hidden border bg-muted/30">
+                  <Image
+                    src={editor.heroPreviewUrl || form.heroImageUrl}
+                    alt="Hero image preview"
+                    fill
+                    unoptimized
+                    sizes="(min-width: 1024px) 70vw, 100vw"
+                    className="object-contain"
+                  />
+                </div>
+              ) : null}
+              <div className="flex flex-wrap gap-2">
+                <input
+                  id="article-hero-upload"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="sr-only"
+                  disabled={editor.busy}
+                  aria-label="Upload Featured News hero image"
+                  onChange={(event) => {
+                    editor.selectHero(event.target.files?.[0]);
+                    event.target.value = "";
+                  }}
+                />
+                <Button type="button" size="sm" disabled={editor.busy} asChild>
+                  <label
+                    htmlFor="article-hero-upload"
+                    className="cursor-pointer"
+                  >
+                    <Upload />
+                    {editor.heroFile || form.heroImageUrl
+                      ? "Replace hero image"
+                      : "Upload hero image"}
+                  </label>
+                </Button>
+                {editor.heroFile || form.heroImageUrl ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={editor.busy}
+                    onClick={editor.removeHero}
+                  >
+                    Remove hero image
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          </details>
           <label className={fieldClass}>
             Title *
             <Input

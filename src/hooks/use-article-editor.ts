@@ -77,6 +77,9 @@ export function useArticleEditor(id?: string) {
       if (thumbnailPreviewUrl) URL.revokeObjectURL(thumbnailPreviewUrl);
     };
   }, [thumbnailPreviewUrl]);
+  const [heroFile, setHeroFile] = useState<File | null>(null);
+  const [heroPreviewUrl, setHeroPreviewUrl] = useState<string | null>(null);
+  useEffect(() => () => { if (heroPreviewUrl) URL.revokeObjectURL(heroPreviewUrl); }, [heroPreviewUrl]);
   const article = articleQuery.data?.article;
   const articleId = article?.id ?? null;
   const loadedForm = article ? articleToForm(article) : emptyArticleForm();
@@ -159,6 +162,19 @@ export function useArticleEditor(id?: string) {
     setThumbnailPreviewUrl(null);
     patch("featuredImageUrl", "");
   }
+  function selectHero(file?: File) {
+    if (!file) return;
+    const fileError = articleImageFileError(file);
+    if (fileError) { setError(fileError); return; }
+    setHeroFile(file);
+    setHeroPreviewUrl(URL.createObjectURL(file));
+    setError("");
+  }
+  function removeHero() {
+    setHeroFile(null);
+    setHeroPreviewUrl(null);
+    patch("heroImageUrl", "");
+  }
   async function uploadContentImage(file: File) {
     if (!canEdit || busy)
       throw new Error("Article editing is unavailable right now.");
@@ -226,6 +242,9 @@ export function useArticleEditor(id?: string) {
             },
           }
         : input;
+      if (heroFile) payload.heroImageUpload = {
+        fileName: heroFile.name, mimeType: heroFile.type, contentBase64: await articleImageToBase64(heroFile),
+      };
       const articleId =
         id ??
         (await create({ variables: { input: payload } })).data?.createArticle
@@ -255,6 +274,7 @@ export function useArticleEditor(id?: string) {
     titleChanged,
     categoryChanged,
     translationChanged,
+    heroFile, heroPreviewUrl, selectHero, removeHero,
     thumbnailFile,
     thumbnailPreviewUrl,
     selectThumbnail,

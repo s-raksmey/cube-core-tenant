@@ -1,4 +1,4 @@
-export const MAX_ARTICLE_IMAGE_BYTES = 1000 * 1024;
+export const MAX_ARTICLE_IMAGE_BYTES = 3000 * 1024;
 
 const extensions: Record<string, string[]> = {
   "image/png": [".png"],
@@ -13,7 +13,7 @@ export function articleImageFileError(file: File) {
     !file.size ||
     file.size > MAX_ARTICLE_IMAGE_BYTES
   ) {
-    return "Choose a PNG, JPEG, or WebP image up to 1000 KB.";
+    return "Choose a PNG, JPEG, or WebP image up to 3000 KB.";
   }
   return null;
 }

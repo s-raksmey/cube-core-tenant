@@ -24,6 +24,14 @@ const inter = localFont({
   display: "swap",
 });
 
+const notoSansKhmer = localFont({
+  src: "../../public/fonts/NotoSansKhmer-VariableFont_wdth,wght.ttf",
+  variable: "--font-noto-sans-khmer",
+  weight: "100 900",
+  style: "normal",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   description: "Cube Core sub-tenant workspace",
   referrer: "no-referrer",
@@ -33,7 +41,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${inter.variable} h-full antialiased`}>
+    <html lang="en" className={`${inter.variable} ${notoSansKhmer.variable} h-full antialiased`}>
       <body className="min-h-full bg-background font-sans text-foreground">
         <Script id="tenant-workspace-title" strategy="beforeInteractive">
           {`try { const tenantName = localStorage.getItem("${tenantDocumentTitleStorageKey}"); if (tenantName) document.title = tenantName; } catch {}`}

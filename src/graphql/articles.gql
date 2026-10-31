@@ -19,7 +19,7 @@ query Article($id: ID!) {
 query ArticleForEdit($id: ID!) {
   article(id: $id) {
     id title slug summary content status categoryId subcategoryId authorId authorRole
-    isBreaking isFeatured featuredImageUrl
+    isBreaking isFeatured featuredImageUrl heroImageUrl
     tags { id name }
     translations { locale title summary content }
   }

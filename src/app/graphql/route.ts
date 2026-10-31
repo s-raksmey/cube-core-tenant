@@ -11,8 +11,8 @@ import { managementHostFromRequest } from "@/lib/tenant-hostname";
 import { print } from "graphql";
 import { NextResponse } from "next/server";
 
-// Leave room for a 1,000 KB base64 image and article text in one mutation.
-const MAX_GRAPHQL_BODY_BYTES = 2_500_000;
+// Allow featured and optional hero uploads (3,000 KB each), with bounded article text.
+const MAX_GRAPHQL_BODY_BYTES = 10_000_000;
 
 async function resolveAccessToken(): Promise<{
   accessToken: string | null;
