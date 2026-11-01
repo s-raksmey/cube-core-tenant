@@ -5,7 +5,7 @@ import type { TenantUserRow } from "@/types/tenant-user.types";
 import { useQuery } from "@apollo/client/react";
 import { useMemo, useState } from "react";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 25;
 
 /** Owns tenant-user list querying, explicit search, and pagination. */
 export function useTenantUsers({ canViewUsers }: { canViewUsers: boolean }) {
@@ -13,6 +13,7 @@ export function useTenantUsers({ canViewUsers }: { canViewUsers: boolean }) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const { data, loading, error, refetch } = useQuery(TENANT_USERS_QUERY, {
+    fetchPolicy: "network-only",
     variables: { search: search || null, page, pageSize: PAGE_SIZE },
     skip: !canViewUsers,
   });
@@ -30,7 +31,10 @@ export function useTenantUsers({ canViewUsers }: { canViewUsers: boolean }) {
 
   function applySearch() {
     const nextSearch = searchInput.trim();
-    if (nextSearch === search && page === 1) return;
+    if (nextSearch === search && page === 1) {
+      void refetch().catch(() => undefined);
+      return;
+    }
     setPage(1);
     setSearch(nextSearch);
   }

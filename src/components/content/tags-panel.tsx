@@ -171,7 +171,7 @@ export function TagsPanel() {
           </tbody>
         </table>
       </div>
-      {tags.page > 1 || tags.tags.length === 25 ? (
+      {tags.page > 1 || tags.total > 25 ? (
         <div className="flex items-center justify-end gap-3">
           <Button
             variant="outline"
@@ -183,7 +183,7 @@ export function TagsPanel() {
           <span className="text-sm">Page {tags.page}</span>
           <Button
             variant="outline"
-            disabled={tags.tags.length < 25 || tags.loading}
+            disabled={tags.page >= tags.totalPages || tags.loading}
             onClick={() => tags.setPage(tags.page + 1)}
           >
             Next

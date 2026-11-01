@@ -47,7 +47,9 @@ export function useTenantTags() {
   }
   return {
     permissions,
-    tags: query.data?.tags ?? [],
+    tags: query.data?.tags.items ?? [],
+    total: query.data?.tags.total ?? 0,
+    totalPages: Math.max(1, Math.ceil((query.data?.tags.total ?? 0) / 25)),
     initialLoading: permissions.loading || (query.loading && !query.data),
     loading: query.loading,
     error: query.error,
@@ -63,7 +65,12 @@ export function useTenantTags() {
       setNotice("");
     },
     applySearch: () => {
-      setSearch(searchInput.trim());
+      const nextSearch = searchInput.trim();
+      if (nextSearch === search && page === 1) {
+        void query.refetch().catch(() => undefined);
+        return;
+      }
+      setSearch(nextSearch);
       setPage(1);
     },
     create: (input: CreateTagInput) =>
@@ -76,7 +83,7 @@ export function useTenantTags() {
   };
 }
 
-type Tag = TagsQuery["tags"][number];
+type Tag = TagsQuery["tags"]["items"][number];
 export function useTenantTagForm(tags: ReturnType<typeof useTenantTags>) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Tag | null>(null);

@@ -1,19 +1,22 @@
-query Categories($search: String) {
-  categories(search: $search) {
-    id
-    slug
-    name
-    translations {
-      locale
-      name
-    }
-    subcategories {
+query Categories($search: String, $page: Int, $pageSize: Int) {
+  categories(search: $search, page: $page, pageSize: $pageSize) {
+    total page pageSize
+    items {
       id
-      categoryId
       slug
+      name
       translations {
         locale
         name
+      }
+      subcategories {
+        id
+        categoryId
+        slug
+        translations {
+          locale
+          name
+        }
       }
     }
   }
@@ -72,3 +75,17 @@ mutation DeleteSubcategory($id: ID!) {
   deleteSubcategory(id: $id)
 }
 
+
+query Subcategories($categoryId: ID, $search: String, $page: Int, $pageSize: Int) {
+  subcategories(categoryId: $categoryId, search: $search, page: $page, pageSize: $pageSize) {
+    total page pageSize
+    items { id categoryId slug translations { locale name } }
+  }
+}
+
+query CategoryOptions($search: String, $page: Int, $pageSize: Int) {
+  categories(search: $search, page: $page, pageSize: $pageSize) {
+    total page pageSize
+    items { id name }
+  }
+}

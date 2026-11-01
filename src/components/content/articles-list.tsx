@@ -1,5 +1,7 @@
 "use client";
 
+import { TaxonomyPicker } from "@/components/content/taxonomy-picker";
+
 import { useConsoleUser } from "@/components/providers/console-user-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,7 +47,7 @@ const statusLabel = (status: ArticleStatus) =>
     .toLowerCase()
     .replace(/^./, (letter) => letter.toUpperCase());
 const selectClass =
-  "h-9 appearance-none rounded-md border border-input bg-background px-3 pr-8 text-sm";
+  "block h-8 appearance-none rounded-lg border border-input bg-background px-2.5 pr-8 text-sm";
 const actionLabels: Record<ArticleListAction, string> = {
   delete: "Delete draft",
   deleteArchived: "Delete permanently",
@@ -141,22 +143,7 @@ export function ArticlesList({ initialScope }: { initialScope: ArticleScope }) {
           <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2" />
         </div>
 
-        <div className="relative">
-          <select
-            className={selectClass}
-            aria-label="Filter category"
-            value={data.categoryId}
-            onChange={(event) => data.setCategoryId(event.target.value)}
-          >
-            <option value="">All categories</option>
-            {data.categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2" />
-        </div>
+        <TaxonomyPicker label="Filter category" placeholder="All categories" value={data.categoryId} onChange={data.setCategoryId} data={data.categoryPicker} />
 
         {data.permissions.canCreateArticles ? (
           <Button className="sm:ml-auto" asChild>

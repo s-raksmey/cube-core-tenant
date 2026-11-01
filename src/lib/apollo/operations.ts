@@ -21,6 +21,7 @@ export {
   TenantAnalyticsDocument as TENANT_ANALYTICS_QUERY,
   TenantAuditLogsDocument as TENANT_AUDIT_LOGS_QUERY,
   CategoriesDocument as CATEGORIES_QUERY,
+  SubcategoriesDocument as SUBCATEGORIES_QUERY,
   CreateCategoryDocument as CREATE_CATEGORY,
   CreateSubcategoryDocument as CREATE_SUBCATEGORY,
   UpdateSubcategoryDocument as UPDATE_SUBCATEGORY,

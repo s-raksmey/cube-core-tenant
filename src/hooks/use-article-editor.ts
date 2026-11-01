@@ -1,10 +1,11 @@
 "use client";
 
+import { useTaxonomyPicker } from "@/hooks/use-taxonomy-picker";
+
 import { useConsoleUser } from "@/components/providers/console-user-provider";
 import { useTenantUserPermissions } from "@/hooks/use-tenant-user-permissions";
 import {
   ARTICLE_FOR_EDIT_QUERY,
-  CATEGORIES_QUERY,
   CREATE_ARTICLE,
   PUBLISH_ARTICLE,
   SCHEDULE_ARTICLE,
@@ -44,10 +45,6 @@ export function useArticleEditor(id?: string) {
   const articleQuery = useQuery(ARTICLE_FOR_EDIT_QUERY, {
     variables: { id: id ?? "" },
     skip: !id || !permissions.canViewArticles,
-  });
-  const categoriesQuery = useQuery(CATEGORIES_QUERY, {
-    variables: { search: null },
-    skip: !permissions.canViewCategories,
   });
   const [tagSearch, setTagSearch] = useState("");
   const tagsQuery = useQuery(TAGS_QUERY, {
@@ -93,10 +90,8 @@ export function useArticleEditor(id?: string) {
       };
     });
   }
-  const categories = categoriesQuery.data?.categories ?? [];
-  const subcategories =
-    categories.find((category) => category.id === form.categoryId)
-      ?.subcategories ?? [];
+  const categoryPicker = useTaxonomyPicker("category", permissions.canViewCategories);
+  const subcategoryPicker = useTaxonomyPicker("subcategory", permissions.canViewSubcategories, form.categoryId);
   const availableLocales = supportedLocales.filter(
     (locale) =>
       locale.code !== "en" &&
@@ -104,7 +99,7 @@ export function useArticleEditor(id?: string) {
   );
   const tagOptions = useMemo(() => {
     const byId = new Map((article?.tags ?? []).map((tag) => [tag.id, tag]));
-    for (const tag of tagsQuery.data?.tags ?? []) byId.set(tag.id, tag);
+    for (const tag of tagsQuery.data?.tags.items ?? []) byId.set(tag.id, tag);
     return [...byId.values()];
   }, [article?.tags, tagsQuery.data?.tags]);
   const canEdit = !id
@@ -286,8 +281,10 @@ export function useArticleEditor(id?: string) {
     setScheduledAt,
     tagSearch,
     setTagSearch,
-    categories,
-    subcategories,
+    categoryPicker,
+    subcategoryPicker,
+    categoryName: article?.categoryName,
+    subcategoryName: article?.subcategoryName,
     tagOptions,
     availableLocales,
     busy,

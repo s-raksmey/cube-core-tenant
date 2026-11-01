@@ -1,5 +1,7 @@
 "use client";
 
+import { TaxonomyPicker } from "@/components/content/taxonomy-picker";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -66,7 +68,9 @@ export function CategoriesPanel() {
     () => new Set(),
   );
 
+  const categoryData = useTenantCategories();
   const {
+    page, setPage, total, totalPages, loading: refreshing,
     searchInput,
     setSearchInput,
     applySearch,
@@ -87,7 +91,7 @@ export function CategoriesPanel() {
     updatingSubcategory,
     deletingSubcategory,
     updateSubcategoryError,
-  } = useTenantCategories();
+  } = categoryData;
   const {
     canCreateCategories,
     canViewSubcategories,
@@ -249,6 +253,8 @@ export function CategoriesPanel() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex w-full gap-2 sm:max-w-md">
           <Input
+            aria-label="Search categories"
+            maxLength={160}
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
             onKeyDown={(event) => {
@@ -299,8 +305,7 @@ export function CategoriesPanel() {
                   colSpan={showActions ? 4 : 3}
                   className="p-8 text-center text-muted-foreground"
                 >
-                  No categories yet. Create your first category to organize your
-                  content.
+                  No categories found. Try another search or create a category.
                 </td>
               </tr>
             ) : null}
@@ -473,6 +478,50 @@ export function CategoriesPanel() {
           </tbody>
         </table>
       </div>
+
+      {page > 1 || total > 25 ? (
+        <div className="flex items-center justify-end gap-3 text-sm">
+          <Button variant="outline" disabled={page <= 1 || refreshing} onClick={() => setPage(page - 1)}>Previous</Button>
+          <span>Page {page} of {totalPages}</span>
+          <Button variant="outline" disabled={page >= totalPages || refreshing} onClick={() => setPage(page + 1)}>Next</Button>
+        </div>
+      ) : null}
+      {canViewSubcategories ? (
+        <section className="space-y-3" aria-label="Search subcategories">
+          <h2 className="text-lg font-semibold">Subcategories</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <Input className="sm:max-w-sm" aria-label="Search subcategories" placeholder="Search subcategories" maxLength={160}
+              value={categoryData.subcategoryInput} onChange={(event) => categoryData.setSubcategoryInput(event.target.value)}
+              onKeyDown={(event) => { if (event.key === "Enter") categoryData.applySubcategorySearch(); }} />
+            <Button variant="outline" onClick={categoryData.applySubcategorySearch}>Search</Button>
+            <TaxonomyPicker label="Subcategory parent category" placeholder="All categories" value={categoryData.categoryId} onChange={categoryData.setCategoryId} data={categoryData.categoryPicker} />
+          </div>
+          {categoryData.subcategoryError ? <p role="alert" className="text-sm text-destructive">{categoryData.subcategoryError.message}</p> : null}
+          <div className="overflow-hidden rounded-xl border bg-card" aria-busy={categoryData.subcategoryLoading}>
+            <table className="w-full text-sm">
+              <thead className="border-b text-left text-muted-foreground"><tr><th className="p-3">Name</th><th>Slug</th><th className="p-3 text-right">Actions</th></tr></thead>
+              <tbody>
+                {categoryData.subcategoryLoading ? <tr><td colSpan={3} className="p-8 text-center" role="status">Loading subcategories…</td></tr> : categoryData.subcategories.map((subcategory) => (
+                  <tr key={subcategory.id} className="border-b last:border-0">
+                    <td className="p-3">{subcategory.translations.find((item) => item.locale === "en")?.name ?? subcategory.slug}</td>
+                    <td>{subcategory.slug}</td>
+                    <td className="p-3 text-right">
+                      {canEditSubcategories ? <Button variant="ghost" size="icon" aria-label={`Edit ${subcategory.slug}`} onClick={() => openEditSubcategoryDialog({ id: subcategory.categoryId, name: categories.find((item) => item.id === subcategory.categoryId)?.name ?? "Category" }, subcategory)}><Pencil /></Button> : null}
+                      {canDeleteSubcategories ? <Button variant="ghost" size="icon" aria-label={`Delete ${subcategory.slug}`} onClick={() => setSubcategoryToDelete({ id: subcategory.id, name: subcategory.slug })}><Trash2 /></Button> : null}
+                    </td>
+                  </tr>
+                ))}
+                {!categoryData.subcategoryLoading && !categoryData.subcategoryError && !categoryData.subcategories.length ? <tr><td colSpan={3} className="p-8 text-center text-muted-foreground">No subcategories found.</td></tr> : null}
+              </tbody>
+            </table>
+          </div>
+          {categoryData.subcategoryPage > 1 || categoryData.subcategoryTotal > 25 ? <div className="flex items-center justify-end gap-3 text-sm">
+            <Button variant="outline" disabled={categoryData.subcategoryPage <= 1 || categoryData.subcategoryLoading} onClick={() => categoryData.setSubcategoryPage(categoryData.subcategoryPage - 1)}>Previous</Button>
+            <span>Page {categoryData.subcategoryPage} of {Math.max(1, Math.ceil(categoryData.subcategoryTotal / 25))}</span>
+            <Button variant="outline" disabled={categoryData.subcategoryPage * 25 >= categoryData.subcategoryTotal || categoryData.subcategoryLoading} onClick={() => categoryData.setSubcategoryPage(categoryData.subcategoryPage + 1)}>Next</Button>
+          </div> : null}
+        </section>
+      ) : null}
 
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent className="gap-5 p-0 sm:max-w-md">

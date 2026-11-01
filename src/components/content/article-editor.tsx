@@ -1,5 +1,7 @@
 "use client";
 
+import { TaxonomyPicker } from "@/components/content/taxonomy-picker";
+
 import {
   ArticleMarkdown,
   ArticleMarkdownEditor,
@@ -399,38 +401,11 @@ export function ArticleEditor({ id }: { id?: string }) {
             <h2 className="text-sm font-medium">Organization</h2>
             <label className={fieldClass}>
               Category *
-              <select
-                className={selectClass}
-                value={form.categoryId}
-                onChange={(event) => editor.categoryChanged(event.target.value)}
-              >
-                <option value="">Select category</option>
-                {editor.categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
+              <TaxonomyPicker label="Category" placeholder="Select category" value={form.categoryId} selectedLabel={editor.categoryName} onChange={editor.categoryChanged} data={editor.categoryPicker} />
             </label>
             <label className={fieldClass}>
               Subcategory *
-              <select
-                className={selectClass}
-                value={form.subcategoryId}
-                disabled={!form.categoryId}
-                onChange={(event) =>
-                  editor.patch("subcategoryId", event.target.value)
-                }
-              >
-                <option value="">Select subcategory</option>
-                {editor.subcategories.map((subcategory) => (
-                  <option key={subcategory.id} value={subcategory.id}>
-                    {subcategory.translations.find(
-                      (item) => item.locale === "en",
-                    )?.name ?? subcategory.slug}
-                  </option>
-                ))}
-              </select>
+              <TaxonomyPicker label="Subcategory" placeholder="Select subcategory" value={form.subcategoryId} selectedLabel={editor.subcategoryName} onChange={(value) => editor.patch("subcategoryId", value)} data={editor.subcategoryPicker} disabled={!form.categoryId} />
             </label>
             <div className="space-y-2">
               <label className={fieldClass}>

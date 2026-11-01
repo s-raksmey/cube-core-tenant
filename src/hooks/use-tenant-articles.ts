@@ -1,5 +1,7 @@
 "use client";
 
+import { useTaxonomyPicker } from "@/hooks/use-taxonomy-picker";
+
 import { useTenantUserPermissions } from "@/hooks/use-tenant-user-permissions";
 import type {
   ArticleScope,
@@ -9,7 +11,6 @@ import {
   ARCHIVE_ARTICLE,
   ARTICLES_QUERY,
   CANCEL_ARTICLE_SCHEDULE,
-  CATEGORIES_QUERY,
   DELETE_ARCHIVED_ARTICLE,
   DELETE_ARTICLE,
   PUBLISH_ARTICLE,
@@ -23,7 +24,7 @@ import {
   UPDATE_ARTICLE_SCHEDULE,
 } from "@/lib/apollo/operations";
 import { useMutation, useQuery } from "@apollo/client/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 export type ArticleListAction =
   | "delete"
@@ -64,10 +65,7 @@ export function useTenantArticles(initialScope: ArticleScope = "ALL") {
     skip: !permissions.canViewArticles,
     fetchPolicy: "network-only",
   });
-  const categoriesQuery = useQuery(CATEGORIES_QUERY, {
-    variables: { search: null },
-    skip: !permissions.canViewCategories,
-  });
+  const categoryPicker = useTaxonomyPicker("category", permissions.canViewCategories);
   const [remove] = useMutation(DELETE_ARTICLE);
   const [removeArchived] = useMutation(DELETE_ARCHIVED_ARTICLE);
   const [submit] = useMutation(SUBMIT_ARTICLE_FOR_REVIEW);
@@ -83,10 +81,6 @@ export function useTenantArticles(initialScope: ArticleScope = "ALL") {
   const [featured] = useMutation(SET_ARTICLE_FEATURED);
   const pageData = query.data?.articles;
   const totalPages = Math.max(1, Math.ceil((pageData?.total ?? 0) / 25));
-  const categories = useMemo(
-    () => categoriesQuery.data?.categories ?? [],
-    [categoriesQuery.data],
-  );
   async function act(
     action: ArticleListAction,
     id: string,
@@ -156,7 +150,7 @@ export function useTenantArticles(initialScope: ArticleScope = "ALL") {
     total: pageData?.total ?? 0,
     page,
     totalPages,
-    categories,
+    categoryPicker,
     scope: effectiveScope,
     status,
     categoryId,
@@ -169,7 +163,12 @@ export function useTenantArticles(initialScope: ArticleScope = "ALL") {
     actionBusy,
     setSearchInput,
     applySearch: () => {
-      setSearch(searchInput.trim());
+      const nextSearch = searchInput.trim();
+      if (nextSearch === search && page === 1) {
+        void query.refetch().catch(() => undefined);
+        return;
+      }
+      setSearch(nextSearch);
       setPage(1);
     },
     setScope: (value: ArticleScope) => {

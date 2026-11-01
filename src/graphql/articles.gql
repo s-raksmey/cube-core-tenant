@@ -18,7 +18,7 @@ query Article($id: ID!) {
 
 query ArticleForEdit($id: ID!) {
   article(id: $id) {
-    id title slug summary content status categoryId subcategoryId authorId authorRole
+    id title slug summary content status categoryId categoryName subcategoryId subcategoryName authorId authorRole
     isBreaking isFeatured featuredImageUrl heroImageUrl
     tags { id name }
     translations { locale title summary content }
